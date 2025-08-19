@@ -1,1 +1,1 @@
-# AIgoTrade
+# AIgoTrade - Paper Trading & Portfolio Analytics Web App
