@@ -6,7 +6,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db.models import F
 from decimal import Decimal
-from django.utils import timezone
 
 from .models import Stock, Portfolio, Holding, Transaction
 from .serializers import (
@@ -221,11 +220,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         else:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get']) # API endpoint
     def portfolio(self, request):
         """Get current holdings + P/L for default portfolio (API requirement)"""
         try:
-            # Get user's default portfolio or first active portfolio
             portfolio = Portfolio.objects.filter(
                 user=request.user, 
                 is_active=True
@@ -237,14 +235,12 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Get updated portfolio summary
             result = TradingService.get_portfolio_summary(
                 user=request.user,
                 portfolio_id=str(portfolio.id)
             )
             
             if result['success']:
-                # Add holdings details
                 holdings = portfolio.holdings.select_related('stock').all()
                 holdings_data = []
                 
@@ -285,12 +281,11 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def orders(self, request):
         """Get transaction history (API requirement)"""
         try:
-            # Get all transactions for user's portfolios
+
             transactions = Transaction.objects.filter(
                 portfolio__user=request.user
             ).select_related('stock', 'portfolio').order_by('-transaction_date')
             
-            # Apply pagination
             page = self.paginate_queryset(transactions)
             if page is not None:
                 serializer = TransactionSerializer(page, many=True)

@@ -1,4 +1,5 @@
-from django.db import transaction, F
+from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict
