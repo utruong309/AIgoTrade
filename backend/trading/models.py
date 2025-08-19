@@ -15,7 +15,6 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Trading specific fields
     risk_tolerance = models.CharField(
         max_length=20,
         choices=[
@@ -88,18 +87,15 @@ class Portfolio(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     
-    # Portfolio metrics
     total_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     cash_balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     invested_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total_return = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total_return_percent = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     
-    # Settings
     is_default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     
-    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -118,17 +114,14 @@ class Holding(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='holdings')
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='holdings')
     
-    # Position details
     quantity = models.DecimalField(max_digits=15, decimal_places=6, default=0)
     average_cost = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     current_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     
-    # Performance metrics
     unrealized_gain_loss = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     unrealized_gain_loss_percent = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     
-    # Metadata
     first_purchase_date = models.DateTimeField()
     last_transaction_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -166,20 +159,16 @@ class Transaction(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='transactions')
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='transactions', blank=True, null=True)
     
-    # Transaction details
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Financial details
+
     quantity = models.DecimalField(max_digits=15, decimal_places=6, default=0)
     price = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2)
     fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
-    # Timing
     transaction_date = models.DateTimeField()
     
-    # Metadata
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
