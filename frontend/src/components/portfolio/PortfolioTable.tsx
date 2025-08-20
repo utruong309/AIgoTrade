@@ -11,7 +11,7 @@ import {
   CardContent
 } from '@mui/material';
 import { portfolioAPI } from '../../services/api';
-import { Portfolio, Holding } from '../../types';
+import { Portfolio } from '../../types';
 
 const PortfolioTable: React.FC = () => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);

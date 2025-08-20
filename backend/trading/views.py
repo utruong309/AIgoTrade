@@ -13,7 +13,7 @@ from .serializers import (
     StockSerializer, PortfolioSerializer, PortfolioDetailSerializer,
     HoldingSerializer, TransactionSerializer, TransactionCreateSerializer
 )
-from .services import TradingService, MarketDataService
+from .services import TradingService
 
 User = get_user_model()
 
@@ -91,7 +91,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post']) # must have ID, /api/portfolios/<pk>/buy/
     def buy(self, request, pk=None):
         """Execute a buy order"""
         portfolio = self.get_object()
@@ -183,7 +183,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         try:
             amount = Decimal(str(request.data.get('amount', 0)))
             
-            result = TradingService.add_cash(
+            result = TradingService.add_cash( # core trading logic from services.py
                 user=request.user,
                 portfolio_id=str(portfolio.id),
                 amount=amount
@@ -205,6 +205,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    # function name = action name in URL 
+
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         """Get portfolio summary with current P/L"""

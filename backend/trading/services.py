@@ -157,13 +157,13 @@ class TradingService:
                     'available': float(holding.quantity)
                 }
             
-            gross_proceeds = quantity * price
-            net_proceeds = gross_proceeds - fees
+            gross_proceeds = quantity * price # total 
+            net_proceeds = gross_proceeds - fees # after paying trading fee
             
-            portfolio.cash_balance = F('cash_balance') + net_proceeds
+            portfolio.cash_balance = F('cash_balance') + net_proceeds # add to cash balance
             portfolio.save()
             
-            cost_basis = holding.average_cost * quantity
+            cost_basis = holding.average_cost * quantity # what user originally paid for the shares 
             realized_gain_loss = gross_proceeds - cost_basis
             
             new_quantity = holding.quantity - quantity

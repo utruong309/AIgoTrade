@@ -27,8 +27,11 @@ export const authAPI = {
   getProfile: () => api.get('/auth/profile/'),
 };
 
+
+// send GET to portfolios/portfolio
+
 export const portfolioAPI = {
-  getPortfolio: () => api.get<Portfolio>('/portfolios/portfolio/'),
+  getPortfolio: () => api.get<Portfolio>('/portfolios/portfolio/'), 
   getOrders: () => api.get('/portfolios/orders/'),
 };
 
