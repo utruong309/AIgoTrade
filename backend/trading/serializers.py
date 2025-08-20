@@ -247,7 +247,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         
-        # Create default portfolio for the user
         Portfolio.objects.create(
             user=user,
             name="My Portfolio",

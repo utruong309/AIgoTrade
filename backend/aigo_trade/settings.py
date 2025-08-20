@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'trading',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -221,3 +222,14 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+ASGI_APPLICATION = 'aigo_trade.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
