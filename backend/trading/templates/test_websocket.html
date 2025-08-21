@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <script>
+        let socket = null;
+
+        function connect() {
+            socket = new WebSocket('ws://127.0.0.1:8000/ws/test/');
+            
+            socket.onopen = function(e) {
+                addMessage('Connected to WebSocket!');
+            };
+            
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                addMessage('Received: ' + JSON.stringify(data));
+            };
+            
+            socket.onclose = function(e) {
+                addMessage('Disconnected from WebSocket');
+            };
+            
+            socket.onerror = function(e) {
+                addMessage('WebSocket error: ' + e);
+            };
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        }
+
+        function sendMessage() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const message = document.getElementById('messageInput').value;
+                socket.send(JSON.stringify({message: message}));
+                addMessage('Sent: ' + message);
+            }
+        }
+
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            messagesDiv.appendChild(messageElement);
+        }
+    </script>
+</body>
+</html>

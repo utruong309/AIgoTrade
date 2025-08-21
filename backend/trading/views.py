@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db.models import F
 from decimal import Decimal
+from django.shortcuts import render
 
 from .models import Stock, Portfolio, Holding, Transaction
 from .serializers import (
@@ -16,7 +17,6 @@ from .serializers import (
 from .services import TradingService
 
 User = get_user_model()
-
 
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for user management"""
@@ -338,3 +338,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return TransactionCreateSerializer
         return TransactionSerializer
+
+def test_websocket(request):
+    return render(request, 'test_websocket.html') 

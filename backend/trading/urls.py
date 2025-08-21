@@ -11,4 +11,5 @@ router.register(r'transactions', views.TransactionViewSet, basename='transaction
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('test/', views.test_websocket, name='test_websocket')
 ]
