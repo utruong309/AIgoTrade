@@ -32,6 +32,11 @@ class TwelveDataWebSocketService:
     def connect(self):
         try:
             logger.info("Attempting to connect to TwelveData WebSocket...")
+
+            import ssl
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
             
             self.ws = websocket.WebSocketApp(
                 self.base_url,
@@ -40,9 +45,9 @@ class TwelveDataWebSocketService:
                 on_error=self.on_error,
                 on_close=self.on_close
             )
-            
-            self.ws.run_forever()
-            
+
+            self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+                   
         except Exception as e:
             logger.error(f"Connection error: {e}")
             self.connected = False
