@@ -1,7 +1,9 @@
 import json
+import asyncio
 import websocket
 import time
 import threading
+from django.conf import settings
 import os
 from dotenv import load_dotenv
 import logging
@@ -32,7 +34,7 @@ class TwelveDataWebSocketService:
     def connect(self):
         try:
             logger.info("Attempting to connect to TwelveData WebSocket...")
-
+            
             import ssl
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
@@ -45,15 +47,15 @@ class TwelveDataWebSocketService:
                 on_error=self.on_error,
                 on_close=self.on_close
             )
-
+            
             self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-                   
+            
         except Exception as e:
             logger.error(f"Connection error: {e}")
             self.connected = False
             self._handle_reconnection()
             
-    def on_open(self, ws):
+    def on_open(self, _ws):
         logger.info("WebSocket connected to TwelveData!")
         self.connected = True
         self.reconnect_attempts = 0
@@ -63,7 +65,7 @@ class TwelveDataWebSocketService:
             
         self._start_heartbeat()
         
-    def on_message(self, ws, message):
+    def on_message(self, _ws, message):
         try:
             data = json.loads(message)
             logger.info(f"Received: {data}")
@@ -74,6 +76,13 @@ class TwelveDataWebSocketService:
                 self.handle_price_update(data)
             elif event_type == 'status':
                 self.handle_status_event(data)
+            elif event_type == 'subscribe-status':
+                self.handle_subscribe_status(data)
+            elif event_type == 'heartbeat':
+                logger.debug("Heartbeat received from server")
+            elif event_type == 'message-processing':
+                if self._handle_rate_limit(data):
+                    return
             else:
                 logger.info(f"Unknown event type: {event_type}")
                 
@@ -82,11 +91,11 @@ class TwelveDataWebSocketService:
         except Exception as e:
             logger.error(f"Message handling error: {e}")
             
-    def on_error(self, ws, error):
+    def on_error(self, _ws, error):
         logger.error(f"WebSocket error: {error}")
         self.connected = False
         
-    def on_close(self, ws, close_status_code, close_msg):
+    def on_close(self, _ws, close_status_code, close_msg):
         logger.warning(f"WebSocket closed: {close_status_code} - {close_msg}")
         self.connected = False
         
@@ -112,6 +121,52 @@ class TwelveDataWebSocketService:
             logger.info("All subscriptions reset")
             self.subscribed_symbols.clear()
             
+    def handle_subscribe_status(self, data):
+        status = data.get('status', '')
+        success = data.get('success', [])
+        fails = data.get('fails', [])
+        
+        if status == 'ok':
+            if success:
+                for item in success:
+                    symbol = item.get('symbol', '')
+                    if symbol:
+                        logger.info(f"Successfully subscribed to {symbol}")
+                        self.subscribed_symbols.add(symbol)
+        elif status == 'error':
+            if fails:
+                for item in fails:
+                    symbol = item.get('symbol', '')
+                    if symbol:
+                        logger.warning(f"Failed to subscribe to {symbol}")
+                        self._retry_subscription(symbol)
+                        
+    def _retry_subscription(self, symbol):
+        try:
+            retry_symbols = [symbol, symbol.upper(), symbol.lower()]
+            
+            for retry_symbol in retry_symbols:
+                subscribe_message = {
+                    "action": "subscribe",
+                    "params": {
+                        "symbols": retry_symbol
+                    }
+                }
+                self.ws.send(json.dumps(subscribe_message))
+                logger.info(f"Retrying subscription for {retry_symbol}")
+                break
+                
+        except Exception as e:
+            logger.error(f"Retry subscription failed for {symbol}: {e}")
+    def _handle_rate_limit(self, data):
+        messages = data.get('messages', [])
+        for message in messages:
+            if 'exceeds the limit of 100 events per minute' in message:
+                logger.warning("Rate limit exceeded. Waiting 60 seconds before retrying...")
+                time.sleep(60)
+            return True
+        return False
+            
     def subscribe_symbol(self, symbol):
         if self.connected and self.ws:
             try:
@@ -122,7 +177,7 @@ class TwelveDataWebSocketService:
                     }
                 }
                 
-                self.ws.send(json.dumps(subscribe_message)) # send to TwelveData server to subscribe to a specific symbol 
+                self.ws.send(json.dumps(subscribe_message))
                 logger.info(f"Subscribed to {symbol}")
                 return True
                 
@@ -217,6 +272,23 @@ class TwelveDataWebSocketService:
             
         except Exception as e:
             logger.error(f"Database update failed for {symbol}: {e}")
+            
+    def _emit_price_event(self, symbol, price, timestamp, day_volume, change, change_percent):
+        try:
+            event_data = {
+                'type': 'price_update',
+                'symbol': symbol,
+                'price': price,
+                'timestamp': timestamp,
+                'volume': day_volume,
+                'change': change,
+                'change_percent': change_percent
+            }
+            
+            logger.debug(f"Price event emitted for {symbol}")
+            
+        except Exception as e:
+            logger.error(f"Failed to emit price event: {e}")
             
     def _start_heartbeat(self):
         def heartbeat_loop():
