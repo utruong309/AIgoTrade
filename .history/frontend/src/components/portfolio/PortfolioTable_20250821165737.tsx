@@ -23,6 +23,7 @@ const PortfolioTable: React.FC = () => {
   useEffect(() => {
     fetchPortfolio();
     
+    // Set up auto-refresh every 15 seconds to match market data updates
     const interval = setInterval(fetchPortfolio, 15000);
     
     return () => clearInterval(interval);
@@ -32,12 +33,13 @@ const PortfolioTable: React.FC = () => {
     try {
       setLoading(true);
       const response = await portfolioAPI.getPortfolio();
-
+      
+      // Handle the nested response structure from backend
       if (response.data && response.data.status === 'success' && response.data.data) {
         setPortfolio(response.data.data);
         setLastUpdate(new Date().toLocaleTimeString());
       } else if (response.data) {
-
+        // Fallback: if no nested structure, use response directly
         setPortfolio(response.data);
         setLastUpdate(new Date().toLocaleTimeString());
       } else {

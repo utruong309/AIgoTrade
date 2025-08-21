@@ -54,15 +54,17 @@ class Stock(models.Model):
     industry = models.CharField(max_length=100, blank=True, null=True)
     market_cap = models.BigIntegerField(blank=True, null=True)
     
-    # Current market data
+    # Real-time market data (updated via WebSocket)
     current_price = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     previous_close = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     day_change = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     day_change_percent = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     
-    # Trading info
+    # Real-time trading info (updated via WebSocket)
     volume = models.BigIntegerField(default=0)
     avg_volume = models.BigIntegerField(default=0)
+    
+    # Fundamental data
     pe_ratio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     dividend_yield = models.DecimalField(max_digits=8, decimal_places=4, blank=True, null=True)
     
@@ -78,6 +80,55 @@ class Stock(models.Model):
     
     def __str__(self):
         return f"{self.symbol} - {self.name}"
+
+
+class MarketData(models.Model):
+    """Historical OHLC market data for stocks"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='market_data')
+    
+    # OHLC data
+    open_price = models.DecimalField(max_digits=15, decimal_places=4)
+    high_price = models.DecimalField(max_digits=15, decimal_places=4)
+    low_price = models.DecimalField(max_digits=15, decimal_places=4)
+    close_price = models.DecimalField(max_digits=15, decimal_places=4)
+    
+    # Additional data
+    volume = models.BigIntegerField()
+    adjusted_close = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
+    
+    # Time period
+    date = models.DateField()
+    time_period = models.CharField(
+        max_length=10,
+        choices=[
+            ('1min', '1 Minute'),
+            ('5min', '5 Minutes'),
+            ('15min', '15 Minutes'),
+            ('30min', '30 Minutes'),
+            ('1hour', '1 Hour'),
+            ('1day', '1 Day'),
+            ('1week', '1 Week'),
+            ('1month', '1 Month'),
+        ],
+        default='1day'
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'trading_market_data'
+        ordering = ['-date', '-time_period']
+        unique_together = [['stock', 'date', 'time_period']]
+        indexes = [
+            models.Index(fields=['stock', 'date']),
+            models.Index(fields=['stock', 'time_period']),
+        ]
+    
+    def __str__(self):
+        return f"{self.stock.symbol} - {self.date} ({self.time_period})"
 
 
 class Portfolio(models.Model):

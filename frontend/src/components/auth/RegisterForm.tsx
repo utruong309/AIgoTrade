@@ -63,6 +63,7 @@ const RegisterForm: React.FC = () => {
         
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
+            id="register-username"
             fullWidth
             label="Username"
             name="username"
@@ -70,8 +71,13 @@ const RegisterForm: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            autoComplete="username"
+            inputProps={{
+              'aria-describedby': 'register-username-helper'
+            }}
           />
           <TextField
+            id="register-email"
             fullWidth
             label="Email"
             name="email"
@@ -80,26 +86,41 @@ const RegisterForm: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            autoComplete="email"
+            inputProps={{
+              'aria-describedby': 'register-email-helper'
+            }}
           />
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
+              id="register-first-name"
               fullWidth
               label="First Name"
               name="first_name"
               value={formData.first_name}
               onChange={handleChange}
               margin="normal"
+              autoComplete="given-name"
+              inputProps={{
+                'aria-describedby': 'register-first-name-helper'
+              }}
             />
             <TextField
+              id="register-last-name"
               fullWidth
               label="Last Name"
               name="last_name"
               value={formData.last_name}
               onChange={handleChange}
               margin="normal"
+              autoComplete="family-name"
+              inputProps={{
+                'aria-describedby': 'register-last-name-helper'
+              }}
             />
           </Box>
           <TextField
+            id="register-password"
             fullWidth
             label="Password"
             name="password"
@@ -108,8 +129,13 @@ const RegisterForm: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            autoComplete="new-password"
+            inputProps={{
+              'aria-describedby': 'register-password-helper'
+            }}
           />
           <TextField
+            id="register-password-confirm"
             fullWidth
             label="Confirm Password"
             name="password_confirm"
@@ -118,8 +144,13 @@ const RegisterForm: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            autoComplete="new-password"
+            inputProps={{
+              'aria-describedby': 'register-password-confirm-helper'
+            }}
           />
           <TextField
+            id="register-risk-tolerance"
             fullWidth
             select
             label="Risk Tolerance"
@@ -127,12 +158,17 @@ const RegisterForm: React.FC = () => {
             value={formData.risk_tolerance}
             onChange={handleChange}
             margin="normal"
+            autoComplete="off"
+            inputProps={{
+              'aria-describedby': 'register-risk-tolerance-helper'
+            }}
           >
             <MenuItem value="conservative">Conservative</MenuItem>
             <MenuItem value="moderate">Moderate</MenuItem>
             <MenuItem value="aggressive">Aggressive</MenuItem>
           </TextField>
           <TextField
+            id="register-investment-experience"
             fullWidth
             select
             label="Investment Experience"
@@ -140,6 +176,10 @@ const RegisterForm: React.FC = () => {
             value={formData.investment_experience}
             onChange={handleChange}
             margin="normal"
+            autoComplete="off"
+            inputProps={{
+              'aria-describedby': 'register-investment-experience-helper'
+            }}
           >
             <MenuItem value="beginner">Beginner</MenuItem>
             <MenuItem value="intermediate">Intermediate</MenuItem>
@@ -147,18 +187,21 @@ const RegisterForm: React.FC = () => {
           </TextField>
 
           <TextField
-          fullWidth
-          label="Initial Cash Balance"
-          name="initial_cash"
-          type="number"
-          value={formData.initial_cash}
-          onChange={handleChange}
-          margin="normal"
-          helperText="Starting cash for your portfolio"
-          slotProps={{
-            input: {
+            id="register-initial-cash"
+            fullWidth
+            label="Initial Cash Balance"
+            name="initial_cash"
+            type="number"
+            value={formData.initial_cash}
+            onChange={handleChange}
+            margin="normal"
+            helperText="Starting cash for your portfolio"
+            autoComplete="off"
+            InputProps={{
               startAdornment: <span>$</span>,
-            },
+            }}
+            inputProps={{
+              'aria-describedby': 'register-initial-cash-helper'
             }}
           />
           

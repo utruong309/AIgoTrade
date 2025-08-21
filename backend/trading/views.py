@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,14 +8,21 @@ from django.contrib.auth import get_user_model
 from django.db.models import F
 from decimal import Decimal
 from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+from django.db import transaction
 
-from .models import Stock, Portfolio, Holding, Transaction
+from .models import Stock, Portfolio, Holding, Transaction, MarketData
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserRegistrationSerializer,
     StockSerializer, PortfolioSerializer, PortfolioDetailSerializer,
     HoldingSerializer, TransactionSerializer, TransactionCreateSerializer
 )
 from .services import TradingService
+from .live_market_service import get_live_market_service
 
 User = get_user_model()
 
@@ -62,13 +70,140 @@ class StockViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def trending(self, request):
         """Get trending stocks based on volume and price change"""
-        trending_stocks = self.queryset.filter(
-            volume__gt=F('avg_volume'),
-            day_change_percent__gt=5
-        ).order_by('-day_change_percent')[:20]
-        
-        serializer = self.get_serializer(trending_stocks, many=True)
-        return Response(serializer.data)
+        try:
+            # Use live market service to get trending stocks
+            live_service = get_live_market_service()
+            stocks = live_service.get_stock_list()
+            
+            # Filter for trending stocks (high volume, significant price change)
+            trending_stocks = [
+                stock for stock in stocks
+                if abs(stock['day_change_percent']) > 0.1 and stock['volume'] > 100000
+            ]
+            
+            # Sort by absolute price change percentage
+            trending_stocks.sort(key=lambda x: abs(x['day_change_percent']), reverse=True)
+            
+            return Response({
+                'status': 'success',
+                'data': trending_stocks[:20],
+                'count': len(trending_stocks[:20])
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def top_stocks(self, request):
+        """Get top stocks by volume with real-time prices"""
+        try:
+            live_service = get_live_market_service()
+            stocks = live_service.get_stock_list()
+            
+            # Sort by volume
+            top_stocks = sorted(stocks, key=lambda x: x['volume'], reverse=True)[:20]
+            
+            return Response({
+                'status': 'success',
+                'data': top_stocks,
+                'count': len(top_stocks)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def market_data(self, request, pk=None):
+        """Get market data (OHLC) for a specific stock"""
+        try:
+            stock = self.get_object()
+            symbol = stock.symbol
+            
+            # Get detailed stock data from live service
+            live_service = get_live_market_service()
+            stock_detail = live_service.get_stock_detail(symbol)
+            
+            if stock_detail:
+                return Response({
+                    'status': 'success',
+                    'stock': stock_detail,
+                    'market_data': {
+                        'data': stock_detail['market_data'],
+                        'count': len(stock_detail['market_data'])
+                    }
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': 'Stock data not available'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Search stocks by symbol or name"""
+        try:
+            query = request.query_params.get('q', '')
+            if not query:
+                return Response({
+                    'status': 'error',
+                    'message': 'Search query is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Use live market service to search stocks
+            live_service = get_live_market_service()
+            results = live_service.search_stocks(query)
+            
+            return Response({
+                'status': 'success',
+                'query': query,
+                'data': results,
+                'count': len(results)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Get detailed stock information by symbol"""
+        try:
+            stock = self.get_object()
+            symbol = stock.symbol
+            
+            # Get detailed stock data from live service
+            live_service = get_live_market_service()
+            stock_detail = live_service.get_stock_detail(symbol)
+            
+            if stock_detail:
+                return Response({
+                    'status': 'success',
+                    'data': stock_detail
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': 'Stock data not available'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PortfolioViewSet(viewsets.ModelViewSet):
@@ -225,55 +360,24 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get']) # API endpoint
     def portfolio(self, request):
         """Get current holdings + P/L for default portfolio (API requirement)"""
+        # Debug logging
+        print(f"Portfolio request - User: {request.user}")
+        print(f"Portfolio request - Auth: {request.auth}")
+        print(f"Portfolio request - Headers: {request.headers}")
+        print(f"Portfolio request - Is authenticated: {request.user.is_authenticated}")
+        
         try:
-            portfolio = Portfolio.objects.filter(
-                user=request.user, 
-                is_active=True
-            ).order_by('-is_default', '-created_at').first()
+            # Use trading service to get portfolio summary
+            trading_service = TradingService(request.user)
+            portfolio_summary = trading_service.get_portfolio_summary()
             
-            if not portfolio:
-                return Response(
-                    {'error': 'No active portfolio found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            return Response({
+                'status': 'success',
+                'data': portfolio_summary
+            })
             
-            result = TradingService.get_portfolio_summary(
-                user=request.user,
-                portfolio_id=str(portfolio.id)
-            )
-            
-            if result['success']:
-                holdings = portfolio.holdings.select_related('stock').all()
-                holdings_data = []
-                
-                for holding in holdings:
-                    holdings_data.append({
-                        'id': str(holding.id),
-                        'stock': {
-                            'id': str(holding.stock.id),
-                            'symbol': holding.stock.symbol,
-                            'name': holding.stock.name,
-                            'current_price': float(holding.stock.current_price),
-                            'day_change_percent': float(holding.stock.day_change_percent)
-                        },
-                        'quantity': float(holding.quantity),
-                        'average_cost': float(holding.average_cost),
-                        'total_cost': float(holding.total_cost),
-                        'current_value': float(holding.current_value),
-                        'unrealized_gain_loss': float(holding.unrealized_gain_loss),
-                        'unrealized_gain_loss_percent': float(holding.unrealized_gain_loss_percent),
-                        'first_purchase_date': holding.first_purchase_date,
-                        'last_transaction_date': holding.last_transaction_date
-                    })
-                
-                response_data = result['portfolio']
-                response_data['holdings'] = holdings_data
-                
-                return Response(response_data, status=status.HTTP_200_OK)
-            else:
-                return Response(result, status=status.HTTP_400_BAD_REQUEST)
-                
         except Exception as e:
+            print(f"Portfolio error: {e}")
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -281,26 +385,119 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def orders(self, request):
-        """Get transaction history (API requirement)"""
+        """Get transaction history for portfolio"""
         try:
-
-            transactions = Transaction.objects.filter(
-                portfolio__user=request.user
-            ).select_related('stock', 'portfolio').order_by('-transaction_date')
+            trading_service = TradingService(request.user)
+            transactions = trading_service.get_transaction_history()
             
-            page = self.paginate_queryset(transactions)
-            if page is not None:
-                serializer = TransactionSerializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
-            
-            serializer = TransactionSerializer(transactions, many=True)
-            return Response(serializer.data)
+            return Response({
+                'status': 'success',
+                'data': transactions,
+                'count': len(transactions)
+            })
             
         except Exception as e:
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+    @action(detail=False, methods=['post'])
+    def buy(self, request):
+        """Execute buy order"""
+        try:
+            symbol = request.data.get('symbol', '').upper()
+            quantity = Decimal(str(request.data.get('quantity', 0)))
+            price = request.data.get('price')  # Optional, will use live price if not provided
+            
+            if not symbol or quantity <= 0:
+                return Response({
+                    'status': 'error',
+                    'message': 'Valid symbol and quantity are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            trading_service = TradingService(request.user)
+            result = trading_service.buy_stock(symbol, quantity, price)
+            
+            return Response({
+                'status': 'success',
+                'data': result
+            })
+            
+        except ValueError as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def sell(self, request):
+        """Execute sell order"""
+        try:
+            symbol = request.data.get('symbol', '').upper()
+            quantity = Decimal(str(request.data.get('quantity', 0)))
+            price = request.data.get('price')  
+            
+            if not symbol or quantity <= 0:
+                return Response({
+                    'status': 'error',
+                    'message': 'Valid symbol and quantity are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            trading_service = TradingService(request.user)
+            result = trading_service.sell_stock(symbol, quantity, price)
+            
+            return Response({
+                'status': 'success',
+                'data': result
+            })
+            
+        except ValueError as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def holding(self, request):
+        """Get detailed holding information for a specific stock"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Stock symbol is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            trading_service = TradingService(request.user)
+            holding_detail = trading_service.get_holding_detail(symbol)
+            
+            if holding_detail:
+                return Response({
+                    'status': 'success',
+                    'data': holding_detail
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': f'No holding found for {symbol}'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class HoldingViewSet(viewsets.ModelViewSet):
@@ -339,5 +536,109 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return TransactionCreateSerializer
         return TransactionSerializer
 
+class MarketDataViewSet(viewsets.ModelViewSet):
+    """ViewSet for market data"""
+    queryset = Stock.objects.filter(is_active=True)
+    serializer_class = StockSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def list(self, request):
+        """Get all stocks with current market data"""
+        try:
+            # Use live market service to get current stock data
+            live_service = get_live_market_service()
+            stocks = live_service.get_stock_list()
+            
+            return Response({
+                'status': 'success',
+                'data': stocks,
+                'count': len(stocks)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def retrieve(self, request, pk=None):
+        """Get specific stock with detailed market data"""
+        try:
+            stock = self.get_object()
+            symbol = stock.symbol
+            
+            # Get detailed stock data from live service
+            live_service = get_live_market_service()
+            stock_detail = live_service.get_stock_detail(symbol)
+            
+            if stock_detail:
+                return Response({
+                    'status': 'success',
+                    'stock': stock_detail
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': 'Stock data not available'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 def test_websocket(request):
     return render(request, 'test_websocket.html') 
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated]) # type: ignore
+def test_auth(request):
+    """Test endpoint to verify authentication is working"""
+    return Response({
+        'success': True,
+        'message': 'Authentication is working!',
+        'user': request.user.username,
+        'user_id': request.user.id,
+        'is_authenticated': request.user.is_authenticated
+    })
+
+@api_view(['POST'])
+@permission_classes([AllowAny]) # type: ignore
+def register(request):
+    """
+    User registration endpoint
+    POST /api/auth/register
+    """
+    serializer = UserRegistrationSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        try:
+            with transaction.atomic():
+                user = serializer.save()
+                
+                token, created = Token.objects.get_or_create(user=user)
+                
+                initial_cash = request.data.get('initial_cash', 0)
+                if initial_cash and float(initial_cash) > 0:
+                    default_portfolio = Portfolio.objects.get(user=user, is_default=True)
+                    default_portfolio.cash_balance = Decimal(str(initial_cash))
+                    default_portfolio.save()
+                
+                return Response({
+                    'success': True,
+                    'message': 'User registered successfully',
+                    'user': UserProfileSerializer(user).data,
+                    'token': token.key
+                }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    return Response({
+        'success': False,
+        'errors': serializer.errors
+    }, status=status.HTTP_400_BAD_REQUEST) 

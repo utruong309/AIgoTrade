@@ -24,7 +24,7 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      const response = await authAPI.login(email, password);
+      const response = await authAPI.login({ email, password });
       if (response.data.success) {
         login(response.data.user, response.data.token);
       }
@@ -46,6 +46,7 @@ const LoginForm: React.FC = () => {
         
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
+            id="login-email"
             fullWidth
             label="Email"
             type="email"
@@ -53,8 +54,13 @@ const LoginForm: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             margin="normal"
             required
+            autoComplete="email"
+            inputProps={{
+              'aria-describedby': 'login-email-helper'
+            }}
           />
           <TextField
+            id="login-password"
             fullWidth
             label="Password"
             type="password"
@@ -62,6 +68,10 @@ const LoginForm: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             margin="normal"
             required
+            autoComplete="current-password"
+            inputProps={{
+              'aria-describedby': 'login-password-helper'
+            }}
           />
           <Button
             type="submit"
