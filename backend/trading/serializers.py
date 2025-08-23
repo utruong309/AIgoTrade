@@ -6,7 +6,6 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for User model"""
     password = serializers.CharField(write_only=True, min_length=8)
     
     class Meta:
@@ -36,8 +35,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializer for user profile (without sensitive data)"""
-    
     class Meta:
         model = User
         fields = [
@@ -50,7 +47,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class StockSerializer(serializers.ModelSerializer):
-    """Serializer for Stock model"""
     market_cap_display = serializers.ReadOnlyField()
     
     class Meta:
@@ -69,15 +65,12 @@ class StockSerializer(serializers.ModelSerializer):
 
 
 class StockBasicSerializer(serializers.ModelSerializer):
-    """Basic stock serializer for nested relationships"""
-    
     class Meta:
         model = Stock
         fields = ['id', 'symbol', 'name', 'current_price', 'day_change_percent']
 
 
 class HoldingSerializer(serializers.ModelSerializer):
-    """Serializer for Holding model"""
     stock = StockBasicSerializer(read_only=True)
     stock_id = serializers.UUIDField(write_only=True)
     current_price = serializers.ReadOnlyField()
@@ -98,7 +91,6 @@ class HoldingSerializer(serializers.ModelSerializer):
 
 
 class PortfolioSerializer(serializers.ModelSerializer):
-    """Serializer for Portfolio model"""
     holdings = HoldingSerializer(many=True, read_only=True)
     holdings_count = serializers.SerializerMethodField()
     
@@ -120,15 +112,12 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
 
 class PortfolioBasicSerializer(serializers.ModelSerializer):
-    """Basic portfolio serializer for nested relationships"""
-    
     class Meta:
         model = Portfolio
         fields = ['id', 'name', 'total_value', 'is_default']
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    """Serializer for Transaction model"""
     stock = StockBasicSerializer(read_only=True)
     stock_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     portfolio = PortfolioBasicSerializer(read_only=True)
@@ -145,30 +134,16 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def validate(self, data):
-        # Validate that stock is provided for buy/sell transactions
         if data.get('transaction_type') in ['buy', 'sell'] and not data.get('stock_id'):
-            raise serializers.ValidationError(
-                "Stock is required for buy/sell transactions"
-            )
-        
-        # Validate quantity for stock transactions
+            raise serializers.ValidationError("Stock is required for buy/sell transactions")
         if data.get('transaction_type') in ['buy', 'sell'] and data.get('quantity', 0) <= 0:
-            raise serializers.ValidationError(
-                "Quantity must be greater than 0 for stock transactions"
-            )
-        
-        # Validate price for stock transactions
+            raise serializers.ValidationError("Quantity must be greater than 0 for stock transactions")
         if data.get('transaction_type') in ['buy', 'sell'] and data.get('price', 0) <= 0:
-            raise serializers.ValidationError(
-                "Price must be greater than 0 for stock transactions"
-            )
-        
+            raise serializers.ValidationError("Price must be greater than 0 for stock transactions")
         return data
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating transactions"""
-    
     class Meta:
         model = Transaction
         fields = [
@@ -177,27 +152,16 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         ]
     
     def validate(self, data):
-        # Same validation as TransactionSerializer
         if data.get('transaction_type') in ['buy', 'sell'] and not data.get('stock_id'):
-            raise serializers.ValidationError(
-                "Stock is required for buy/sell transactions"
-            )
-        
+            raise serializers.ValidationError("Stock is required for buy/sell transactions")
         if data.get('transaction_type') in ['buy', 'sell'] and data.get('quantity', 0) <= 0:
-            raise serializers.ValidationError(
-                "Quantity must be greater than 0 for stock transactions"
-            )
-        
+            raise serializers.ValidationError("Quantity must be greater than 0 for stock transactions")
         if data.get('transaction_type') in ['buy', 'sell'] and data.get('price', 0) <= 0:
-            raise serializers.ValidationError(
-                "Price must be greater than 0 for stock transactions"
-            )
-        
+            raise serializers.ValidationError("Price must be greater than 0 for stock transactions")
         return data
 
 
 class PortfolioDetailSerializer(serializers.ModelSerializer):
-    """Detailed portfolio serializer with transactions"""
     holdings = HoldingSerializer(many=True, read_only=True)
     recent_transactions = serializers.SerializerMethodField()
     holdings_count = serializers.SerializerMethodField()
@@ -224,7 +188,6 @@ class PortfolioDetailSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration"""
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     

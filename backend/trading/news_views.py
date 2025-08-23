@@ -119,7 +119,6 @@ def cleanup_news_cache(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def test_newsapi_config(request):
-    """Test endpoint to verify NewsAPI configuration"""
     try:
         api_key = getattr(settings, 'NEWS_API_KEY', None)
         news_service = NewsService()

@@ -27,7 +27,6 @@ from .live_market_service import get_live_market_service
 User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
-    """ViewSet for user management"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
@@ -44,20 +43,17 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
     
     def get_queryset(self):
-        # Users can only see their own profile
         if self.request.user.is_staff:
             return User.objects.all()
         return User.objects.filter(id=self.request.user.id)
     
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """Get current user's profile"""
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
 
 
 class StockViewSet(viewsets.ModelViewSet):
-    """ViewSet for stock management"""
     queryset = Stock.objects.filter(is_active=True)
     serializer_class = StockSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -69,19 +65,15 @@ class StockViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def trending(self, request):
-        """Get trending stocks based on volume and price change"""
         try:
-            # Use live market service to get trending stocks
             live_service = get_live_market_service()
             stocks = live_service.get_stock_list()
-            
-            # Filter for trending stocks (high volume, significant price change)
+
             trending_stocks = [
                 stock for stock in stocks
                 if abs(stock['day_change_percent']) > 0.1 and stock['volume'] > 100000
             ]
-            
-            # Sort by absolute price change percentage
+
             trending_stocks.sort(key=lambda x: abs(x['day_change_percent']), reverse=True)
             
             return Response({
@@ -98,12 +90,10 @@ class StockViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def top_stocks(self, request):
-        """Get top stocks by volume with real-time prices"""
         try:
             live_service = get_live_market_service()
             stocks = live_service.get_stock_list()
             
-            # Sort by volume
             top_stocks = sorted(stocks, key=lambda x: x['volume'], reverse=True)[:20]
             
             return Response({
@@ -120,7 +110,6 @@ class StockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def by_symbol(self, request):
-        """Get stock details by symbol"""
         try:
             symbol = request.query_params.get('symbol', '').upper()
             if not symbol:
@@ -128,8 +117,7 @@ class StockViewSet(viewsets.ModelViewSet):
                     'status': 'error',
                     'message': 'Symbol parameter is required'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Get detailed stock data from live service
+
             live_service = get_live_market_service()
             stock_detail = live_service.get_stock_detail(symbol)
             
@@ -152,12 +140,10 @@ class StockViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def market_data(self, request, pk=None):
-        """Get market data (OHLC) for a specific stock"""
         try:
             stock = self.get_object()
             symbol = stock.symbol
-            
-            # Get detailed stock data from live service
+
             live_service = get_live_market_service()
             stock_detail = live_service.get_stock_detail(symbol)
             
@@ -184,7 +170,6 @@ class StockViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Search stocks by symbol or name"""
         try:
             query = request.query_params.get('q', '')
             if not query:
@@ -193,7 +178,6 @@ class StockViewSet(viewsets.ModelViewSet):
                     'message': 'Search query is required'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Use live market service to search stocks
             live_service = get_live_market_service()
             results = live_service.search_stocks(query)
             
@@ -211,12 +195,10 @@ class StockViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def retrieve(self, request, *args, **kwargs):
-        """Get detailed stock information by symbol"""
         try:
             stock = self.get_object()
             symbol = stock.symbol
-            
-            # Get detailed stock data from live service
+
             live_service = get_live_market_service()
             stock_detail = live_service.get_stock_detail(symbol)
             
@@ -239,7 +221,6 @@ class StockViewSet(viewsets.ModelViewSet):
 
 
 class PortfolioViewSet(viewsets.ModelViewSet):
-    """ViewSet for portfolio management"""
     serializer_class = PortfolioSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter]
@@ -260,7 +241,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post']) # must have ID, /api/portfolios/<pk>/buy/
     def buy(self, request, pk=None):
-        """Execute a buy order"""
         portfolio = self.get_object()
         
         try:
@@ -302,7 +282,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def sell(self, request, pk=None):
-        """Execute a sell order"""
         portfolio = self.get_object()
         
         try:
@@ -344,7 +323,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def add_cash(self, request, pk=None):
-        """Add cash to portfolio"""
         portfolio = self.get_object()
         
         try:
@@ -376,7 +354,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
-        """Get portfolio summary with current P/L"""
         portfolio = self.get_object()
         
         result = TradingService.get_portfolio_summary(
@@ -389,9 +366,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         else:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['get']) # API endpoint
+    @action(detail=False, methods=['get']) 
     def portfolio(self, request):
-        """Get current holdings + P/L for default portfolio (API requirement)"""
         # Debug logging
         print(f"Portfolio request - User: {request.user}")
         print(f"Portfolio request - Auth: {request.auth}")
@@ -417,7 +393,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def orders(self, request):
-        """Get transaction history for portfolio"""
         try:
             trading_service = TradingService(request.user)
             transactions = trading_service.get_transaction_history()
@@ -436,7 +411,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def buy(self, request):
-        """Execute buy order"""
         try:
             symbol = request.data.get('symbol', '').upper()
             quantity = Decimal(str(request.data.get('quantity', 0)))
@@ -469,7 +443,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def sell(self, request):
-        """Execute sell order"""
         try:
             symbol = request.data.get('symbol', '').upper()
             quantity = Decimal(str(request.data.get('quantity', 0)))
@@ -502,7 +475,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def holding(self, request):
-        """Get detailed holding information for a specific stock"""
         try:
             symbol = request.query_params.get('symbol', '').upper()
             if not symbol:
@@ -533,7 +505,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
 
 class HoldingViewSet(viewsets.ModelViewSet):
-    """ViewSet for holding management"""
     serializer_class = HoldingSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -549,7 +520,6 @@ class HoldingViewSet(viewsets.ModelViewSet):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    """ViewSet for transaction management"""
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -569,15 +539,12 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return TransactionSerializer
 
 class MarketDataViewSet(viewsets.ModelViewSet):
-    """ViewSet for market data"""
     queryset = Stock.objects.filter(is_active=True)
     serializer_class = StockSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def list(self, request):
-        """Get all stocks with current market data"""
         try:
-            # Use live market service to get current stock data
             live_service = get_live_market_service()
             stocks = live_service.get_stock_list()
             
@@ -594,12 +561,10 @@ class MarketDataViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def retrieve(self, request, pk=None):
-        """Get specific stock with detailed market data"""
         try:
             stock = self.get_object()
             symbol = stock.symbol
-            
-            # Get detailed stock data from live service
+
             live_service = get_live_market_service()
             stock_detail = live_service.get_stock_detail(symbol)
             
@@ -626,7 +591,6 @@ def test_websocket(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated]) # type: ignore
 def test_auth(request):
-    """Test endpoint to verify authentication is working"""
     return Response({
         'success': True,
         'message': 'Authentication is working!',
@@ -638,10 +602,6 @@ def test_auth(request):
 @api_view(['POST'])
 @permission_classes([AllowAny]) # type: ignore
 def register(request):
-    """
-    User registration endpoint
-    POST /api/auth/register
-    """
     serializer = UserRegistrationSerializer(data=request.data)
     
     if serializer.is_valid():
