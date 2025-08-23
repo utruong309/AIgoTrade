@@ -164,8 +164,8 @@ export const marketAPI = {
   getStocks: () =>
     apiClient.get('/stocks/'),
   
-  getStockDetail: (id: string) =>
-    apiClient.get(`/stocks/${id}/`),
+  getStockDetail: (symbol: string) =>
+    apiClient.get(`/stocks/by_symbol/?symbol=${symbol}`),
   
   getStockMarketData: (id: string, period: string = '1day') =>
     apiClient.get(`/stocks/${id}/market_data/?period=${period}`),

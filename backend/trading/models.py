@@ -1,13 +1,10 @@
-from datetime import timedelta, timezone
+from datetime import timedelta
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
-from decimal import Decimal
 import uuid
 
-
 class User(AbstractUser):
-    """Extended user model for trading platform"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
@@ -46,7 +43,6 @@ class User(AbstractUser):
 
 
 class Stock(models.Model):
-    """Stock/Security information"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     symbol = models.CharField(max_length=10, unique=True, db_index=True)
     name = models.CharField(max_length=100)
@@ -55,21 +51,17 @@ class Stock(models.Model):
     industry = models.CharField(max_length=100, blank=True, null=True)
     market_cap = models.BigIntegerField(blank=True, null=True)
     
-    # Real-time market data (updated via WebSocket)
     current_price = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     previous_close = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     day_change = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     day_change_percent = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     
-    # Real-time trading info (updated via WebSocket)
     volume = models.BigIntegerField(default=0)
     avg_volume = models.BigIntegerField(default=0)
     
-    # Fundamental data
     pe_ratio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     dividend_yield = models.DecimalField(max_digits=8, decimal_places=4, blank=True, null=True)
     
-    # Metadata
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -84,21 +76,17 @@ class Stock(models.Model):
 
 
 class MarketData(models.Model):
-    """Historical OHLC market data for stocks"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='market_data')
     
-    # OHLC data
     open_price = models.DecimalField(max_digits=15, decimal_places=4)
     high_price = models.DecimalField(max_digits=15, decimal_places=4)
     low_price = models.DecimalField(max_digits=15, decimal_places=4)
     close_price = models.DecimalField(max_digits=15, decimal_places=4)
     
-    # Additional data
     volume = models.BigIntegerField()
     adjusted_close = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
     
-    # Time period
     date = models.DateField()
     time_period = models.CharField(
         max_length=10,
@@ -115,7 +103,6 @@ class MarketData(models.Model):
         default='1day'
     )
     
-    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -133,7 +120,6 @@ class MarketData(models.Model):
 
 
 class Portfolio(models.Model):
-    """User's portfolio"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='portfolios')
     name = models.CharField(max_length=100)
@@ -161,7 +147,6 @@ class Portfolio(models.Model):
 
 
 class Holding(models.Model):
-    """Individual stock holdings in a portfolio"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='holdings')
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='holdings')
@@ -189,7 +174,6 @@ class Holding(models.Model):
 
 
 class Transaction(models.Model):
-    """Transaction records for all trading activities"""
     
     TRANSACTION_TYPES = [
         ('buy', 'Buy'),
@@ -235,30 +219,31 @@ class Transaction(models.Model):
         else:
             return f"{self.get_transaction_type_display()}: ${self.total_amount}"
 
-    class NewsArticle(models.Model):
-        symbol = models.CharField(max_length=10, db_index=True)
-        title = models.TextField()
-        description = models.TextField(blank=True, null=True)
-        url = models.URLField()
-        source = models.CharField(max_length=100)
-        published_at = models.DateTimeField()
-        cached_at = models.DateTimeField(auto_now_add=True)
+class NewsArticle(models.Model):
+    symbol = models.CharField(max_length=10, db_index=True)
+    title = models.TextField()
+    description = models.TextField(blank=True, null=True)
+    url = models.URLField()
+    source = models.CharField(max_length=100)
+    published_at = models.DateTimeField()
+    cached_at = models.DateTimeField(auto_now_add=True)
     
-        class Meta:
-            indexes = [
-                models.Index(fields=['symbol', 'cached_at']),
-                models.Index(fields=['published_at']),
-            ]
-            unique_together = ['symbol', 'url']  
-            ordering = ['-published_at']
+    class Meta:
+        indexes = [
+            models.Index(fields=['symbol', 'cached_at']),
+            models.Index(fields=['published_at']),
+        ]
+        
+        unique_together = ['symbol', 'url']  
+        ordering = ['-published_at']
     
-        def __str__(self):
-            return f"{self.symbol}: {self.title[:50]}..."
+    def __str__(self):
+        return f"{self.symbol}: {self.title[:50]}..."
     
-        @classmethod
-        def is_cache_valid(cls, symbol, hours=24):
-            cutoff_time = timezone.now() - timedelta(hours=hours)
-            return cls.objects.filter(
-                symbol=symbol,
-                cached_at__gte=cutoff_time
-            ).exists()
+    @classmethod
+    def is_cache_valid(cls, symbol, hours=24):
+        cutoff_time = timezone.now() - timedelta(hours=hours)
+        return cls.objects.filter(
+            symbol=symbol,
+            cached_at__gte=cutoff_time
+        ).exists()

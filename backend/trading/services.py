@@ -8,14 +8,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TradingService:
-    """Service for executing trades and managing portfolio"""
     
     def __init__(self, user):
         self.user = user
         self.default_portfolio = self._get_default_portfolio()
     
     def _get_default_portfolio(self):
-        """Get or create default portfolio for user"""
         portfolio, created = Portfolio.objects.get_or_create(
             user=self.user,
             is_default=True,
@@ -29,7 +27,6 @@ class TradingService:
         return portfolio
     
     def get_portfolio_summary(self):
-        """Get comprehensive portfolio summary with live prices"""
         try:
             holdings = Holding.objects.filter(portfolio=self.default_portfolio)
             
@@ -111,10 +108,8 @@ class TradingService:
             raise
     
     def buy_stock(self, symbol, quantity, price=None):
-        """Buy stock with live pricing"""
         try:
             with transaction.atomic():
-                # Convert quantity to Decimal to ensure type compatibility
                 quantity = Decimal(str(quantity))
                 
                 stock = Stock.objects.filter(symbol=symbol.upper(), is_active=True).first()
@@ -128,7 +123,6 @@ class TradingService:
                     else:
                         price = stock.current_price
                 else:
-                    # Convert price to Decimal to ensure type compatibility
                     price = Decimal(str(price))
 
                 total_cost = price * quantity
@@ -163,9 +157,9 @@ class TradingService:
             holding.save()
             
             transaction_record = Transaction.objects.create(
-                    portfolio=self.default_portfolio,
+                portfolio=self.default_portfolio,
                 stock=stock,
-                    transaction_type='BUY',
+                transaction_type='buy',
                 quantity=quantity,
                 price=price,
                 total_amount=total_cost,
@@ -189,10 +183,8 @@ class TradingService:
             raise
     
     def sell_stock(self, symbol, quantity, price=None):
-        """Sell stock with live pricing"""
         try:
             with transaction.atomic():
-                # Convert quantity to Decimal to ensure type compatibility
                 quantity = Decimal(str(quantity))
 
                 stock = Stock.objects.filter(symbol=symbol.upper(), is_active=True).first()
@@ -214,7 +206,6 @@ class TradingService:
                     else:
                         price = stock.current_price
                 else:
-                    # Convert price to Decimal to ensure type compatibility
                     price = Decimal(str(price))
                 
                 total_proceeds = price * quantity
@@ -237,11 +228,10 @@ class TradingService:
             transaction_record = Transaction.objects.create(
                 portfolio=self.default_portfolio,
                 stock=stock,
-                transaction_type='SELL',
+                transaction_type='sell',
                 quantity=quantity,
                 price=price,
                 total_amount=total_proceeds,
-                gain_loss=gain_loss,
                 transaction_date=timezone.now()
             )
             
@@ -263,7 +253,6 @@ class TradingService:
             raise
     
     def get_transaction_history(self, limit=50):
-        """Get transaction history for portfolio"""
         try:
             transactions = Transaction.objects.filter(
                 portfolio=self.default_portfolio
@@ -278,7 +267,6 @@ class TradingService:
                     'quantity': t.quantity,
                     'price': float(t.price),
                     'total_amount': float(t.total_amount),
-                    'gain_loss': float(t.gain_loss) if t.gain_loss else None,
                     'timestamp': t.transaction_date.isoformat()
                 }
                 for t in transactions
@@ -289,7 +277,6 @@ class TradingService:
             raise
     
     def get_holding_detail(self, symbol):
-        """Get detailed holding information for a specific stock"""
         try:
             holding = Holding.objects.filter(
                 portfolio=self.default_portfolio,
@@ -299,7 +286,6 @@ class TradingService:
             if not holding:
                 return None
             
-            # Get live price
             stock_detail = get_live_market_service().get_stock_detail(symbol.upper())
             current_price = Decimal(str(stock_detail['current_price'])) if stock_detail else holding.stock.current_price
             

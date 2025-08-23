@@ -160,17 +160,17 @@ const MarketSearch: React.FC<MarketSearchProps> = ({ onStockSelect }) => {
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="subtitle1" fontWeight="bold">
+                      <Typography variant="subtitle1" fontWeight="bold" component="span">
                         {stock.symbol}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" component="span">
                         {stock.name}
                       </Typography>
                     </Box>
                   }
                   secondary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
-                      <Typography variant="body2">
+                      <Typography variant="body2" component="span">
                         {formatPrice(stock.current_price)}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -183,6 +183,7 @@ const MarketSearch: React.FC<MarketSearchProps> = ({ onStockSelect }) => {
                           variant="body2"
                           color={getChangeColor(stock.day_change)}
                           fontWeight="bold"
+                          component="span"
                         >
                           {formatChange(stock.day_change)} ({formatChangePercent(stock.day_change_percent)})
                         </Typography>

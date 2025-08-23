@@ -20,7 +20,9 @@ export interface Stock {
     symbol: string;
     name: string;
     current_price: number;
+    day_change: number;
     day_change_percent: number;
+    volume: number;
 }
   
 export interface Holding {
@@ -40,12 +42,14 @@ export interface Holding {
 }
   
 export interface Portfolio {
-    id: string;
-    name: string;
+    portfolio_id: string;
+    portfolio_name: string;
     total_value: number;
     cash_balance: number;
-    invested_amount: number;
+    total_cost: number;
     total_gain_loss: number;
     total_gain_loss_percent: number;
     holdings: Holding[];
+    holdings_count: number;
+    last_updated: string;
 }

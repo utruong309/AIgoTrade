@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import {
-  DataGrid,
-  GridColDef
-} from '@mui/x-data-grid';
-import {
-  Box,
-  Typography,
-  Paper,
-  Card,
-  CardContent,
-  Button
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Card, 
+  CardContent, 
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import { Refresh } from '@mui/icons-material';
 import { portfolioAPI } from '../../services/api';
 import { Portfolio } from '../../types';
+import NewsFeed from '../news/NewsFeed';
 
 const PortfolioTable: React.FC = () => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
@@ -22,9 +25,7 @@ const PortfolioTable: React.FC = () => {
 
   useEffect(() => {
     fetchPortfolio();
-    
     const interval = setInterval(fetchPortfolio, 15000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -32,12 +33,10 @@ const PortfolioTable: React.FC = () => {
     try {
       setLoading(true);
       const response = await portfolioAPI.getPortfolio();
-
       if (response.data && response.data.status === 'success' && response.data.data) {
         setPortfolio(response.data.data);
         setLastUpdate(new Date().toLocaleTimeString());
       } else if (response.data) {
-
         setPortfolio(response.data);
         setLastUpdate(new Date().toLocaleTimeString());
       } else {
@@ -50,71 +49,7 @@ const PortfolioTable: React.FC = () => {
     setLoading(false);
   };
 
-  const columns: GridColDef[] = [
-    { field: 'symbol', headerName: 'Symbol', width: 100 },
-    { field: 'name', headerName: 'Company', width: 200 },
-    { 
-      field: 'quantity', 
-      headerName: 'Shares', 
-      width: 100,
-      type: 'number'
-    },
-    {
-      field: 'average_cost',
-      headerName: 'Avg Cost',
-      width: 120,
-      type: 'number',
-      valueFormatter: (params: any) => {
-        if (params.value === null || params.value === undefined) return '$0.00';
-        return `$${Number(params.value).toFixed(2)}`;
-      }
-    },
-    {
-      field: 'current_value',
-      headerName: 'Current Value',
-      width: 140,
-      type: 'number',
-      valueFormatter: (params: any) => {
-        if (params.value === null || params.value === undefined) return '$0.00';
-        return `$${Number(params.value).toFixed(2)}`;
-      }
-    },
-    {
-      field: 'unrealized_gain_loss',
-      headerName: 'Gain/Loss',
-      width: 120,
-      type: 'number',
-      valueFormatter: (params: any) => {
-        if (params.value === null || params.value === undefined) return '$0.00';
-        return `$${Number(params.value).toFixed(2)}`;
-      },
-      cellClassName: (params: any) => 
-        (params.value || 0) >= 0 ? 'profit' : 'loss'
-    },
-    {
-      field: 'unrealized_gain_loss_percent',
-      headerName: 'Gain/Loss %',
-      width: 120,
-      type: 'number',
-      valueFormatter: (params: any) => {
-        if (params.value === null || params.value === undefined) return '0.00%';
-        return `${Number(params.value).toFixed(2)}%`;
-      },
-      cellClassName: (params: any) => 
-        (params.value || 0) >= 0 ? 'profit' : 'loss'
-    }
-  ];
-
-  const rows = portfolio?.holdings?.map((holding) => ({
-    id: holding.id,
-    symbol: holding.symbol || 'N/A',
-    name: holding.name || 'Unknown',
-    quantity: holding.quantity,
-    average_cost: holding.average_cost,
-    current_value: holding.market_value,
-    unrealized_gain_loss: holding.gain_loss,
-    unrealized_gain_loss_percent: holding.gain_loss_percent
-  })) || [];
+  const rows = portfolio?.holdings || [];
 
   if (loading && !portfolio) {
     return (
@@ -148,7 +83,6 @@ const PortfolioTable: React.FC = () => {
             </Typography>
           </CardContent>
         </Card>
-        
         <Card>
           <CardContent>
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -159,32 +93,22 @@ const PortfolioTable: React.FC = () => {
             </Typography>
           </CardContent>
         </Card>
-        
         <Card>
           <CardContent>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Total Gain/Loss
             </Typography>
-            <Typography 
-              variant="h4" 
-              component="div"
-              color={(portfolio.total_gain_loss ? parseFloat(String(portfolio.total_gain_loss)) : 0) >= 0 ? 'success.main' : 'error.main'}
-            >
+            <Typography variant="h4" component="div" color={(portfolio.total_gain_loss ? parseFloat(String(portfolio.total_gain_loss)) : 0) >= 0 ? 'success.main' : 'error.main'}>
               ${(portfolio.total_gain_loss ? parseFloat(String(portfolio.total_gain_loss)) : 0).toFixed(2)}
             </Typography>
           </CardContent>
         </Card>
-        
         <Card>
           <CardContent>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Gain/Loss %
             </Typography>
-            <Typography 
-              variant="h4" 
-              component="div"
-              color={(portfolio.total_gain_loss_percent ? parseFloat(String(portfolio.total_gain_loss_percent)) : 0) >= 0 ? 'success.main' : 'error.main'}
-            >
+            <Typography variant="h4" component="div" color={(portfolio.total_gain_loss_percent ? parseFloat(String(portfolio.total_gain_loss_percent)) : 0) >= 0 ? 'success.main' : 'error.main'}>
               {(portfolio.total_gain_loss_percent ? parseFloat(String(portfolio.total_gain_loss_percent)) : 0).toFixed(2)}%
             </Typography>
           </CardContent>
@@ -209,31 +133,47 @@ const PortfolioTable: React.FC = () => {
       )}
 
       {/* Holdings Table */}
-      <Paper sx={{ height: 600, width: '100%' }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 0, pageSize: 10 },
-            },
-          }}
-
-          loading={loading}
-          slots={{
-            noRowsOverlay: () => (
-              <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="h6" color="text.secondary">
-                  No holdings in your portfolio
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Start trading to build your portfolio
-                </Typography>
-              </Box>
-            )
-          }}
-        />
+      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+        <TableContainer sx={{ maxHeight: 400 }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell>Symbol</TableCell>
+                <TableCell>Company</TableCell>
+                <TableCell align="right">Shares</TableCell>
+                <TableCell align="right">Avg Cost</TableCell>
+                <TableCell align="right">Stock Price</TableCell>
+                <TableCell align="right">Current Value</TableCell>
+                <TableCell align="right">Gain/Loss</TableCell>
+                <TableCell align="right">Gain/Loss %</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.symbol}</TableCell>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell align="right">{row.quantity}</TableCell>
+                  <TableCell align="right">${row.average_cost?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell align="right">${row.current_price?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell align="right">${row.market_value?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell align="right" sx={{ color: (row.gain_loss || 0) >= 0 ? 'success.main' : 'error.main' }}>
+                    ${row.gain_loss?.toFixed(2) || '0.00'}
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: (row.gain_loss_percent || 0) >= 0 ? 'success.main' : 'error.main' }}>
+                    {row.gain_loss_percent?.toFixed(2) || '0.00'}%
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
+
+      {/* News Feed */}
+      <Box sx={{ mt: 3 }}>
+        <NewsFeed />
+      </Box>
     </Box>
   );
 };

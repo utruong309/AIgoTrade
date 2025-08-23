@@ -1,10 +1,14 @@
 from pathlib import Path
 from decouple import config
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
+NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -16,7 +20,6 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-jh1pce#lt-t_s@(uss8i_
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
-
 
 # Application definition
 

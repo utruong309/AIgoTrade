@@ -51,10 +51,8 @@ export default function MarketPage() {
   const [lastUpdate, setLastUpdate] = useState<string>('');
 
   useEffect(() => {
-    // Fetch initial stock data
     fetchInitialData();
     
-    // Set up polling for live updates every 15 seconds
     const interval = setInterval(fetchInitialData, 15000);
     
     return () => clearInterval(interval);
@@ -64,14 +62,12 @@ export default function MarketPage() {
     try {
       setConnectionStatus('Fetching market data...');
       
-      // Get auth token from localStorage
       const token = localStorage.getItem('authToken');
       if (!token) {
         setConnectionStatus('Authentication required');
         return;
       }
       
-      // Fetch trending stocks
       const response = await fetch('http://localhost:8000/api/stocks/trending/', {
         headers: {
           'Authorization': `Token ${token}`,
@@ -82,7 +78,6 @@ export default function MarketPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success' && data.data) {
-          // Transform the data to match our Stock interface
           const stocks = data.data.map((stock: any) => ({
             symbol: stock.symbol,
             name: stock.name || `${stock.symbol} Stock`,
@@ -114,11 +109,10 @@ export default function MarketPage() {
 
   const handleStockSelect = (stock: Stock) => {
     setSelectedStock(stock);
-    setTabValue(1); // Switch to chart tab when stock is selected
+    setTabValue(1); 
   };
 
   const handleTradeExecuted = () => {
-    // Refresh portfolio data or show success message
     console.log('Trade executed successfully');
   };
 

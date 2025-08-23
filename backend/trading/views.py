@@ -117,8 +117,40 @@ class StockViewSet(viewsets.ModelViewSet):
                 'status': 'error',
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def by_symbol(self, request):
+        """Get stock details by symbol"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get detailed stock data from live service
+            live_service = get_live_market_service()
+            stock_detail = live_service.get_stock_detail(symbol)
+            
+            if stock_detail:
+                return Response({
+                    'status': 'success',
+                    'data': stock_detail
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': 'Stock data not available'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=True, methods=['get'])
+    @action(detail=False, methods=['get'])
     def market_data(self, request, pk=None):
         """Get market data (OHLC) for a specific stock"""
         try:

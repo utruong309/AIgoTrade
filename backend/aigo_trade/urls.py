@@ -19,7 +19,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('trading.urls')),
     path('api/auth/', include('trading.auth_urls')),
-    path('api-auth/', include('rest_framework.urls'))
+    path('api-auth/', include('rest_framework.urls')), 
+
+    path('api/news/<str:symbol>/', include('trading.urls')),
+    path('api/portfolio/news/', include('trading.urls')),
+    path('api/news/cleanup/', include('trading.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve media files in development
