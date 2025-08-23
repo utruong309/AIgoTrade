@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -233,3 +234,31 @@ class Transaction(models.Model):
             return f"{self.get_transaction_type_display()}: {self.quantity} {self.stock.symbol} @ ${self.price}"
         else:
             return f"{self.get_transaction_type_display()}: ${self.total_amount}"
+
+    class NewsArticle(models.Model):
+        symbol = models.CharField(max_length=10, db_index=True)
+        title = models.TextField()
+        description = models.TextField(blank=True, null=True)
+        url = models.URLField()
+        source = models.CharField(max_length=100)
+        published_at = models.DateTimeField()
+        cached_at = models.DateTimeField(auto_now_add=True)
+    
+        class Meta:
+            indexes = [
+                models.Index(fields=['symbol', 'cached_at']),
+                models.Index(fields=['published_at']),
+            ]
+            unique_together = ['symbol', 'url']  
+            ordering = ['-published_at']
+    
+        def __str__(self):
+            return f"{self.symbol}: {self.title[:50]}..."
+    
+        @classmethod
+        def is_cache_valid(cls, symbol, hours=24):
+            cutoff_time = timezone.now() - timedelta(hours=hours)
+            return cls.objects.filter(
+                symbol=symbol,
+                cached_at__gte=cutoff_time
+            ).exists()
