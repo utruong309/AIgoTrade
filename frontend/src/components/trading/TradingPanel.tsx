@@ -5,7 +5,6 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Alert,
   Snackbar,
   CircularProgress,
@@ -98,80 +97,71 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
         price: parseFloat(formData.price)
       };
 
-      const response = tradeType === 'buy' 
-        ? await portfolioAPI.buyStock(tradeData)
-        : await portfolioAPI.sellStock(tradeData);
+      let response;
+      if (tradeType === 'buy') {
+        response = await portfolioAPI.buyStock(tradeData);
+      } else {
+        response = await portfolioAPI.sellStock(tradeData);
+      }
 
       if (response.data.status === 'success') {
-        setMessage({ 
-          type: 'success', 
-          text: `${tradeType.toUpperCase()} order executed successfully!` 
+        setMessage({
+          type: 'success',
+          text: `Successfully ${tradeType === 'buy' ? 'bought' : 'sold'} ${formData.quantity} shares of ${selectedStock!.symbol}`
         });
-        setShowMessage(true);
-        
-        // Reset form
         setFormData({ quantity: '', price: selectedStock!.current_price.toString() });
-        
-        // Notify parent component
         onTradeExecuted();
       } else {
-        setMessage({ 
-          type: 'error', 
-          text: response.data.message || 'Trade execution failed' 
+        setMessage({
+          type: 'error',
+          text: response.data.message || `Failed to ${tradeType} stock`
         });
-        setShowMessage(true);
       }
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Trade execution failed' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || `Failed to ${tradeType} stock`
       });
-      setShowMessage(true);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
+    setShowMessage(true);
   };
 
   const handleCloseMessage = () => {
     setShowMessage(false);
   };
 
+  const total = calculateTotal();
+
   if (!selectedStock) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          Select a Stock
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Choose a stock from the market to start trading
+        <Typography variant="h6" color="text.secondary">
+          Select a stock to start trading
         </Typography>
       </Paper>
     );
   }
 
-  const total = calculateTotal();
-  const isPositiveChange = selectedStock.day_change >= 0;
-
   return (
     <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" gutterBottom>
         Trade {selectedStock.symbol}
       </Typography>
-      
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        {selectedStock.name}
-      </Typography>
 
-      {/* Stock Price Display */}
+      {/* Stock Info */}
       <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" component="div">
+        <Typography variant="h6" gutterBottom>
+          {selectedStock.name}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h4">
             ${selectedStock.current_price.toFixed(2)}
           </Typography>
           <Chip
-            icon={isPositiveChange ? <TrendingUp /> : <TrendingDown />}
-            label={`${isPositiveChange ? '+' : ''}${selectedStock.day_change.toFixed(2)} (${selectedStock.day_change_percent.toFixed(2)}%)`}
-            color={isPositiveChange ? 'success' : 'error'}
+            icon={selectedStock.day_change >= 0 ? <TrendingUp /> : <TrendingDown />}
+            label={`${selectedStock.day_change >= 0 ? '+' : ''}${selectedStock.day_change.toFixed(2)} (${selectedStock.day_change_percent.toFixed(2)}%)`}
+            color={selectedStock.day_change >= 0 ? 'success' : 'error'}
             variant="outlined"
           />
         </Box>
@@ -179,8 +169,8 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
 
       {/* Trade Type Selection */}
       <Box sx={{ mb: 3 }}>
-        <Grid container spacing={1}>
-          <Grid item xs={6}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ flex: 1 }}>
             <Button
               fullWidth
               variant={tradeType === 'buy' ? 'contained' : 'outlined'}
@@ -190,8 +180,8 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
             >
               Buy
             </Button>
-          </Grid>
-          <Grid item xs={6}>
+          </Box>
+          <Box sx={{ flex: 1 }}>
             <Button
               fullWidth
               variant={tradeType === 'sell' ? 'contained' : 'outlined'}
@@ -201,16 +191,16 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
             >
               Sell
             </Button>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
 
       <Divider sx={{ my: 2 }} />
 
       {/* Trade Form */}
       <Box component="form" sx={{ mb: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
             <TextField
               fullWidth
               label="Quantity"
@@ -220,8 +210,8 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
               inputProps={{ min: 0, step: 1 }}
               disabled={loading}
             />
-          </Grid>
-          <Grid item xs={6}>
+          </Box>
+          <Box sx={{ flex: 1 }}>
             <TextField
               fullWidth
               label="Price per Share"
@@ -231,8 +221,8 @@ export default function TradingPanel({ selectedStock, onTradeExecuted }: Trading
               inputProps={{ min: 0, step: 0.01 }}
               disabled={loading}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* Total Calculation */}
         {total > 0 && (

@@ -59,14 +59,13 @@ export default function StockChart({ stock }: StockChartProps) {
     try {
       setLoading(true);
       setError(null);
-      
-      // For now, let's use the stock detail endpoint to get market data
+
       const response = await marketAPI.getStockDetail(stock.symbol);
       
       if (response.data.status === 'success' && response.data.stock?.market_data) {
         setMarketData(response.data.stock.market_data);
       } else {
-        // If no market data, create some sample data for demonstration
+
         setMarketData([
           {
             date: new Date().toISOString().split('T')[0],
@@ -80,7 +79,7 @@ export default function StockChart({ stock }: StockChartProps) {
       }
     } catch (err: any) {
       console.error('Error fetching stock data:', err);
-      // Create sample data if API fails
+
       setMarketData([
         {
           date: new Date().toISOString().split('T')[0],
@@ -228,7 +227,7 @@ export default function StockChart({ stock }: StockChartProps) {
               <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
               <Tooltip 
                 formatter={(value: number) => [`$${value.toFixed(2)}`, 'Price']}
-                labelFormatter={(label) => `Date: ${label}`}
+                labelFormatter={(label: any) => `Date: ${label}`}
               />
               <Legend />
               <Line 

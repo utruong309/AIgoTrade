@@ -88,7 +88,7 @@ const PortfolioTable: React.FC = () => {
         if (params.value === null || params.value === undefined) return '$0.00';
         return `$${Number(params.value).toFixed(2)}`;
       },
-      cellClassName: (params) => 
+      cellClassName: (params: any) => 
         (params.value || 0) >= 0 ? 'profit' : 'loss'
     },
     {
@@ -100,7 +100,7 @@ const PortfolioTable: React.FC = () => {
         if (params.value === null || params.value === undefined) return '0.00%';
         return `${Number(params.value).toFixed(2)}%`;
       },
-      cellClassName: (params) => 
+      cellClassName: (params: any) => 
         (params.value || 0) >= 0 ? 'profit' : 'loss'
     }
   ];
@@ -218,11 +218,10 @@ const PortfolioTable: React.FC = () => {
               paginationModel: { page: 0, pageSize: 10 },
             },
           }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
+
           loading={loading}
-          components={{
-            NoRowsOverlay: () => (
+          slots={{
+            noRowsOverlay: () => (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary">
                   No holdings in your portfolio

@@ -36,3 +36,14 @@
     transform: rotate(360deg);
   }
 }
+
+/* DataGrid styling for profit/loss */
+.profit {
+  color: #2e7d32 !important;
+  font-weight: 600;
+}
+
+.loss {
+  color: #d32f2f !important;
+  font-weight: 600;
+}

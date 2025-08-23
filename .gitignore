@@ -150,3 +150,5 @@ logs/
 # Local development
 local.py
 local_settings.py
+
+.history
