@@ -5,7 +5,6 @@ from .models import User, Stock, Portfolio, Holding, Transaction
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """Admin for custom User model"""
     list_display = ['username', 'email', 'first_name', 'last_name', 'is_verified', 'risk_tolerance', 'created_at']
     list_filter = ['is_verified', 'risk_tolerance', 'investment_experience', 'is_staff', 'is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name']
@@ -25,7 +24,6 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    """Admin for Stock model"""
     
     list_display = ['symbol', 'name', 'exchange', 'current_price', 'day_change_percent', 'volume', 'is_active']
     list_filter = ['exchange', 'sector', 'industry', 'is_active']
@@ -51,7 +49,6 @@ class StockAdmin(admin.ModelAdmin):
 
 @admin.register(Portfolio)
 class PortfolioAdmin(admin.ModelAdmin):
-    """Admin for Portfolio model"""
     list_display = ['name', 'user', 'total_value', 'cash_balance', 'is_default', 'is_active', 'created_at']
     list_filter = ['is_default', 'is_active', 'created_at']
     search_fields = ['name', 'user__username', 'user__email']
@@ -72,7 +69,6 @@ class PortfolioAdmin(admin.ModelAdmin):
 
 
 class HoldingInline(admin.TabularInline):
-    """Inline for Holdings in Portfolio admin"""
     model = Holding
     extra = 0
     readonly_fields = ['current_value', 'unrealized_gain_loss', 'unrealized_gain_loss_percent']
@@ -80,7 +76,6 @@ class HoldingInline(admin.TabularInline):
 
 @admin.register(Holding)
 class HoldingAdmin(admin.ModelAdmin):
-    """Admin for Holding model"""
     list_display = ['portfolio', 'stock', 'quantity', 'average_cost', 'current_value', 'unrealized_gain_loss_percent']
     list_filter = ['portfolio__user', 'stock__sector']
     search_fields = ['portfolio__name', 'stock__symbol', 'stock__name']
@@ -102,7 +97,6 @@ class HoldingAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    """Admin for Transaction model"""
     list_display = ['portfolio', 'stock', 'transaction_type', 'quantity', 'price', 'total_amount', 'status', 'transaction_date']
     list_filter = ['transaction_type', 'status', 'transaction_date', 'portfolio__user']
     search_fields = ['portfolio__name', 'stock__symbol', 'notes']

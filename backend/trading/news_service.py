@@ -13,7 +13,6 @@ class NewsService:
         self.api_key = getattr(settings, 'NEWS_API_KEY', None)
         self.base_url = "https://newsapi.org/v2"
         
-        # Debug logging to check API key
         if self.api_key:
             logger.info(f"NewsService initialized with API key: {self.api_key[:8]}...")
         else:
@@ -41,17 +40,14 @@ class NewsService:
     def _fetch_from_newsapi(self, symbol: str) -> List[Dict]:
         """Fetch news from NewsAPI with improved error handling"""
         
-        # Check if API key is configured
         if not self.api_key:
             logger.warning("NEWS_API_KEY not configured")
             return self._get_sample_data(symbol)
 
         logger.info(f"Fetching real news for {symbol} from NewsAPI")
         
-        # NewsAPI endpoint
         url = f"{self.base_url}/everything"
         
-        # Build search query - more specific for better results
         query = f'({symbol} AND stock) OR ("{symbol} earnings") OR ("{symbol} financial")'
         
         params = {
@@ -59,16 +55,15 @@ class NewsService:
             'apiKey': self.api_key,
             'language': 'en',
             'sortBy': 'publishedAt',
-            'pageSize': 15,  # Reduced for better quality
-            'from': (timezone.now() - timedelta(days=3)).strftime('%Y-%m-%d'),  # Last 3 days for more recent news
-            'domains': 'reuters.com,bloomberg.com,cnbc.com,marketwatch.com,yahoo.com,wsj.com'  # Trusted financial sources
+            'pageSize': 15, 
+            'from': (timezone.now() - timedelta(days=3)).strftime('%Y-%m-%d'),  
+            'domains': 'reuters.com,bloomberg.com,cnbc.com,marketwatch.com,yahoo.com,wsj.com' 
         }
         
         try:
             logger.info(f"Making NewsAPI request for {symbol}")
             response = requests.get(url, params=params, timeout=15)
             
-            # Log the response status
             logger.info(f"NewsAPI response status: {response.status_code}")
             
             if response.status_code == 401:
@@ -85,7 +80,6 @@ class NewsService:
                 articles = data.get('articles', [])
                 logger.info(f"Retrieved {len(articles)} articles for {symbol}")
                 
-                # Filter out articles with missing data
                 filtered_articles = []
                 for article in articles:
                     if (article.get('title') and 

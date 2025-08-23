@@ -110,10 +110,6 @@ class MarketData(models.Model):
         db_table = 'trading_market_data'
         ordering = ['-date', '-time_period']
         unique_together = [['stock', 'date', 'time_period']]
-        indexes = [
-            models.Index(fields=['stock', 'date']),
-            models.Index(fields=['stock', 'time_period']),
-        ]
     
     def __str__(self):
         return f"{self.stock.symbol} - {self.date} ({self.time_period})"
@@ -229,11 +225,6 @@ class NewsArticle(models.Model):
     cached_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        indexes = [
-            models.Index(fields=['symbol', 'cached_at']),
-            models.Index(fields=['published_at']),
-        ]
-        
         unique_together = ['symbol', 'url']  
         ordering = ['-published_at']
     
