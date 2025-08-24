@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://typescriptlang.org/)
 [![Material-UI](https://img.shields.io/badge/Material--UI-7.3.1-blue.svg)](https://mui.com/)
 
-Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker for seamless deployment.
+Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker. 
 
 ## 🌟 Main Features
 
