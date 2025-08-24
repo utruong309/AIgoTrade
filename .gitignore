@@ -151,4 +151,4 @@ logs/
 local.py
 local_settings.py
 
-.history
+.history.env.docker
