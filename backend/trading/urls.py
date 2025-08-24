@@ -16,6 +16,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('test/', views.test_websocket, name='test_websocket'),
     path('test-auth/', views.test_auth, name='test_auth'),
+    path('api/token/', views.CustomObtainAuthToken.as_view()),
     
     path('news/<str:symbol>/', news_views.get_news_for_symbol, name='news-for-symbol'),
     path('portfolio/news/', news_views.get_portfolio_news, name='portfolio-news'),

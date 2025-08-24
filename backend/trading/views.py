@@ -14,7 +14,6 @@ from django.utils.decorators import method_decorator
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.db import transaction
-
 from .models import Stock, Portfolio, Holding, Transaction, MarketData
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserRegistrationSerializer,
@@ -23,8 +22,13 @@ from .serializers import (
 )
 from .services import TradingService
 from .live_market_service import get_live_market_service
+from rest_framework.permissions import AllowAny
+from rest_framework.authtoken.views import ObtainAuthToken
 
 User = get_user_model()
+
+class CustomObtainAuthToken(ObtainAuthToken):
+    permission_classes = [AllowAny]
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -328,7 +332,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         try:
             amount = Decimal(str(request.data.get('amount', 0)))
             
-            result = TradingService.add_cash( # core trading logic from services.py
+            result = TradingService.add_cash( 
                 user=request.user,
                 portfolio_id=str(portfolio.id),
                 amount=amount
@@ -349,9 +353,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
-    # function name = action name in URL 
-
+        
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         portfolio = self.get_object()
@@ -368,14 +370,12 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get']) 
     def portfolio(self, request):
-        # Debug logging
         print(f"Portfolio request - User: {request.user}")
         print(f"Portfolio request - Auth: {request.auth}")
         print(f"Portfolio request - Headers: {request.headers}")
         print(f"Portfolio request - Is authenticated: {request.user.is_authenticated}")
         
         try:
-            # Use trading service to get portfolio summary
             trading_service = TradingService(request.user)
             portfolio_summary = trading_service.get_portfolio_summary()
             
@@ -414,7 +414,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         try:
             symbol = request.data.get('symbol', '').upper()
             quantity = Decimal(str(request.data.get('quantity', 0)))
-            price = request.data.get('price')  # Optional, will use live price if not provided
+            price = request.data.get('price')  
             
             if not symbol or quantity <= 0:
                 return Response({

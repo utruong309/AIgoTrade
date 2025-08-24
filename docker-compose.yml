@@ -3,35 +3,103 @@ services:
     image: postgres:15
     environment:
       POSTGRES_DB: aigo_trade_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: aigo_trade_user
+      POSTGRES_PASSWORD: aigo_trade_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U aigo_trade_user -d aigo_trade_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - aigotrade_network
 
-  web:
-    build: .
-    command: python aigo_trade/manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
+  redis:
+    image: redis:7-alpine
     ports:
-      - "8000:8000"
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aigotrade_network
+
+  backend:
+    build: ./backend
+    env_file:
+    - .env.docker
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DB_NAME=aigo_trade_db
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=aigo_trade_user
+      - DB_PASSWORD=aigo_trade_password
       - DB_HOST=db
       - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aigotrade_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery:
+    build: ./backend
+    command: celery -A aigo_trade worker --loglevel=info
+    env_file:
+    - .env.docker
+    environment:
+      - DB_NAME=aigo_trade_db
+      - DB_USER=aigo_trade_user
+      - DB_PASSWORD=aigo_trade_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aigotrade_network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - aigotrade_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  aigotrade_network:
+    driver: bridge
