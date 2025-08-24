@@ -213,59 +213,6 @@ docker-compose logs -f [service-name]
 # Execute commands in container
 docker exec -it aigotrade-backend-1 python manage.py shell
 ```
-
-## 🔒 Security Features
-
-- **Custom User Model**: Extended authentication with investment preferences
-- **Token Authentication**: Secure API access with DRF tokens
-- **CORS Configuration**: Cross-origin resource sharing setup
-- **Environment Variables**: Secure configuration management
-- **Database Security**: PostgreSQL with user-specific permissions
-
-## 📈 Trading Features
-
-### **Portfolio Management**
-- Multi-portfolio support with default portfolio creation
-- Real-time portfolio valuation and P&L tracking
-- Cash balance management and transaction history
-- Risk tolerance and investment experience tracking
-
-### **Order Execution**
-- Real-time stock pricing from Twelvedata API
-- Buy/sell order execution with fee calculation
-- Transaction history and order status tracking
-- Portfolio rebalancing and position management
-
-### **Market Analysis**
-- Live market data integration via Twelvedata API
-- Stock screening and filtering capabilities
-- Sector and industry analysis
-- Volume and price trend analysis
-
-### **News Integration**
-- Financial news aggregation via NewsAPI
-- Redis caching for performance optimization
-- Portfolio-specific news filtering
-- News cleanup and cache management
-
-## 🧪 Testing
-
-### **Backend Testing**
-```bash
-# Run all tests
-docker exec -it aigotrade-backend-1 python manage.py test
-
-# Run with coverage
-docker exec -it aigotrade-backend-1 coverage run --source='.' manage.py test
-docker exec -it aigotrade-backend-1 coverage report
-```
-
-### **Frontend Testing**
-```bash
-cd frontend
-npm test
-```
-
 ## 🚀 Deployment
 
 ### **Production Considerations**
@@ -292,7 +239,3 @@ npm test
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
