@@ -1,4 +1,4 @@
-# 🚀 AIgoTrade - Algorithmic Trading Platform
+# 🪙 AIgoTrade - Algorithmic Trading Platform
 
 [![Django](https://img.shields.io/badge/Django-5.2.5-green.svg)](https://djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19.1.1-blue.svg)](https://reactjs.org/)
