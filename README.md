@@ -3,7 +3,7 @@
 [![Django](https://img.shields.io/badge/Django-5.2.5-green.svg)](https://djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19.1.1-blue.svg)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-7-alpine-red.svg)](https://redis.io/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
 [![Celery](https://img.shields.io/badge/Celery-5.3.4-green.svg)](https://celeryproject.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docker.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://typescriptlang.org/)
