@@ -31,13 +31,13 @@ Advanced algorithmic trading platform with real-time market data, portfolio mana
 - **Market Analysis Tools**: Stock screening, trending analysis, and sector performance
 - **News Integration**: Financial news aggregation via NewsAPI with Redis caching
 
-### 4. **User Experience** 👤
+### 4. **User Experience** 🧑🏻‍💻
 - **Custom User Model**: Extended user profiles with investment preferences
 - **Responsive Design**: Modern Material-UI interface for all devices
 - **Real-Time Data**: Live market data updates via API polling (15-second intervals)
 - **Multi-Platform Support**: Web-based platform accessible anywhere
 
-## 🛠️ Technology Stack
+## 🛠️ Technologies Used
 
 ### **Backend**
 - **Framework**: Django 5.2.5 with Django REST Framework 3.14.0
@@ -61,12 +61,6 @@ Advanced algorithmic trading platform with real-time market data, portfolio mana
 - **Web Server**: Nginx for frontend serving and API proxying
 - **Process Manager**: Gunicorn for Django application server
 - **Background Services**: Celery workers for market data updates
-
-### **Development Tools**
-- **Testing**: Pytest 8.3.3 with Django test framework
-- **Code Quality**: Coverage 7.6.3 for test coverage analysis
-- **Environment Management**: Python-decouple and python-dotenv
-- **API Documentation**: Django REST Framework built-in documentation
 
 ## 🚀 Quick Start
 
