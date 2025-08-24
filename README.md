@@ -1,15 +1,15 @@
-# 🚀 AIgoTrade - Algorithmic Trading Platform
+# 🪙 AIgoTrade - Algorithmic Trading Platform
 
 [![Django](https://img.shields.io/badge/Django-5.2.5-green.svg)](https://djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19.1.1-blue.svg)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-7-alpine-red.svg)](https://redis.io/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
 [![Celery](https://img.shields.io/badge/Celery-5.3.4-green.svg)](https://celeryproject.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docker.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://typescriptlang.org/)
 [![Material-UI](https://img.shields.io/badge/Material--UI-7.3.1-blue.svg)](https://mui.com/)
 
-Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker for seamless deployment.
+Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker. 
 
 ## 🌟 Main Features
 
@@ -31,13 +31,13 @@ Advanced algorithmic trading platform with real-time market data, portfolio mana
 - **Market Analysis Tools**: Stock screening, trending analysis, and sector performance
 - **News Integration**: Financial news aggregation via NewsAPI with Redis caching
 
-### 4. **User Experience** 👤
+### 4. **User Experience** 🧑🏻‍💻
 - **Custom User Model**: Extended user profiles with investment preferences
 - **Responsive Design**: Modern Material-UI interface for all devices
 - **Real-Time Data**: Live market data updates via API polling (15-second intervals)
 - **Multi-Platform Support**: Web-based platform accessible anywhere
 
-## 🛠️ Technology Stack
+## 🛠️ Technologies Used
 
 ### **Backend**
 - **Framework**: Django 5.2.5 with Django REST Framework 3.14.0
@@ -61,12 +61,6 @@ Advanced algorithmic trading platform with real-time market data, portfolio mana
 - **Web Server**: Nginx for frontend serving and API proxying
 - **Process Manager**: Gunicorn for Django application server
 - **Background Services**: Celery workers for market data updates
-
-### **Development Tools**
-- **Testing**: Pytest 8.3.3 with Django test framework
-- **Code Quality**: Coverage 7.6.3 for test coverage analysis
-- **Environment Management**: Python-decouple and python-dotenv
-- **API Documentation**: Django REST Framework built-in documentation
 
 ## 🚀 Quick Start
 
@@ -298,7 +292,3 @@ npm test
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
