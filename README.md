@@ -1,4 +1,4 @@
-# 🪙 AIgoTrade - Algorithmic Trading Platform
+# AIgoTrade - Algorithmic Trading Platform
 
 [![Django](https://img.shields.io/badge/Django-5.2.5-green.svg)](https://djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19.1.1-blue.svg)](https://reactjs.org/)
@@ -11,33 +11,35 @@
 
 Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker. 
 
-## 🌟 Main Features
+https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
 
-### 1. **Real-Time Trading System** 📈
+## Main Features
+
+### 1. **Real-Time Trading System** 
 - **Live Market Data**: Real-time stock prices, volume, and market indicators via Twelvedata API
 - **Portfolio Management**: Track holdings, calculate P&L, and manage multiple portfolios
 - **Order Execution**: Buy/sell stocks with real-time pricing and transaction history
 - **Risk Management**: User-defined risk tolerance and investment experience levels
 
-### 2. **Advanced Analytics** 📊
+### 2. **Advanced Analytics** 
 - **Portfolio Performance**: Real-time portfolio valuation and performance metrics
 - **Market Analysis**: Trending stocks, top performers, and sector analysis
 - **Historical Data**: Comprehensive transaction history and performance tracking
 - **Gain/Loss Calculations**: Detailed P&L analysis with percentage changes
 
-### 3. **Market Data & News** 📰
+### 3. **Market Data & News** 
 - **Real-Time Market Data**: Live stock prices, volume, and market indicators via Twelvedata API
 - **Portfolio Performance Tracking**: Comprehensive P&L analysis and performance metrics
 - **Market Analysis Tools**: Stock screening, trending analysis, and sector performance
 - **News Integration**: Financial news aggregation via NewsAPI with Redis caching
 
-### 4. **User Experience** 🧑🏻‍💻
+### 4. **User Experience**
 - **Custom User Model**: Extended user profiles with investment preferences
 - **Responsive Design**: Modern Material-UI interface for all devices
 - **Real-Time Data**: Live market data updates via API polling (15-second intervals)
 - **Multi-Platform Support**: Web-based platform accessible anywhere
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 ### **Backend**
 - **Framework**: Django 5.2.5 with Django REST Framework 3.14.0
@@ -62,7 +64,7 @@ Advanced algorithmic trading platform with real-time market data, portfolio mana
 - **Process Manager**: Gunicorn for Django application server
 - **Background Services**: Celery workers for market data updates
 
-## 🚀 Quick Start
+## How to Run the Code
 
 ### Prerequisites
 - Docker and Docker Compose
@@ -119,7 +121,7 @@ docker exec -it aigotrade-backend-1 python manage.py createsuperuser
 - **Admin Panel**: http://localhost:8000/admin
 - **API Documentation**: http://localhost:8000/api-auth/
 
-## 🔧 Local Development
+## Local Development
 
 ### **Backend Development**
 ```bash
@@ -148,46 +150,14 @@ npm install
 npm start
 ```
 
-### **Database Setup (Local)**
+### **Database Setup - Local**
 ```bash
 # Install PostgreSQL locally or use Docker
 # Update .env with local database credentials
 DB_HOST=localhost
 DB_PORT=5432
 ```
-
-## 📊 API Endpoints
-
-### **Authentication**
-- `POST /api/token/` - Obtain authentication token
-- `POST /api/auth/register/` - User registration
-- `POST /api/auth/login/` - User login
-- `GET /api/auth/profile/` - User profile
-
-### **Portfolio Management**
-- `GET /api/portfolios/portfolio/` - Get user portfolio
-- `POST /api/portfolios/buy/` - Execute buy order
-- `POST /api/portfolios/sell/` - Execute sell order
-- `GET /api/portfolios/summary/` - Portfolio performance summary
-- `GET /api/portfolios/orders/` - Transaction history
-
-### **Market Data**
-- `GET /api/stocks/trending/` - Trending stocks
-- `GET /api/stocks/top_stocks/` - Top performing stocks
-- `GET /api/stocks/search/` - Search stocks by symbol/name
-- `GET /api/stocks/{symbol}/` - Stock details
-- `GET /api/market/` - Market data overview
-
-### **User Management**
-- `GET /api/users/me/` - User profile
-- `PUT /api/users/{id}/` - Update user profile
-
-### **News & Analytics**
-- `GET /api/news/{symbol}/` - News for specific stock
-- `GET /api/portfolio/news/` - Portfolio-related news
-- `GET /api/news/cleanup/` - Clean news cache
-
-## 🐳 Docker Services
+## Docker Services 
 
 ### **Service Architecture**
 - **db**: PostgreSQL 15 database with persistent storage
@@ -213,60 +183,7 @@ docker-compose logs -f [service-name]
 # Execute commands in container
 docker exec -it aigotrade-backend-1 python manage.py shell
 ```
-
-## 🔒 Security Features
-
-- **Custom User Model**: Extended authentication with investment preferences
-- **Token Authentication**: Secure API access with DRF tokens
-- **CORS Configuration**: Cross-origin resource sharing setup
-- **Environment Variables**: Secure configuration management
-- **Database Security**: PostgreSQL with user-specific permissions
-
-## 📈 Trading Features
-
-### **Portfolio Management**
-- Multi-portfolio support with default portfolio creation
-- Real-time portfolio valuation and P&L tracking
-- Cash balance management and transaction history
-- Risk tolerance and investment experience tracking
-
-### **Order Execution**
-- Real-time stock pricing from Twelvedata API
-- Buy/sell order execution with fee calculation
-- Transaction history and order status tracking
-- Portfolio rebalancing and position management
-
-### **Market Analysis**
-- Live market data integration via Twelvedata API
-- Stock screening and filtering capabilities
-- Sector and industry analysis
-- Volume and price trend analysis
-
-### **News Integration**
-- Financial news aggregation via NewsAPI
-- Redis caching for performance optimization
-- Portfolio-specific news filtering
-- News cleanup and cache management
-
-## 🧪 Testing
-
-### **Backend Testing**
-```bash
-# Run all tests
-docker exec -it aigotrade-backend-1 python manage.py test
-
-# Run with coverage
-docker exec -it aigotrade-backend-1 coverage run --source='.' manage.py test
-docker exec -it aigotrade-backend-1 coverage report
-```
-
-### **Frontend Testing**
-```bash
-cd frontend
-npm test
-```
-
-## 🚀 Deployment
+## Deployment
 
 ### **Production Considerations**
 - Set `DEBUG=False` in production
@@ -284,11 +201,3 @@ npm test
 - `REDIS_URL`: Redis connection string
 - `NEWS_API_KEY`: NewsAPI service key (newsapi.org)
 - `TWELVEDATA_API_KEY`: Market data API key
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
