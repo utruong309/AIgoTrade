@@ -103,6 +103,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.docker
 
 # Spyder project settings
 .spyderproject
@@ -150,5 +151,3 @@ logs/
 # Local development
 local.py
 local_settings.py
-
-.history.env.docker
