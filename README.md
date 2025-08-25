@@ -11,6 +11,8 @@
 
 Advanced algorithmic trading platform with real-time market data, portfolio management, and comprehensive trading analytics. Built with Django REST Framework backend and React frontend, containerized with Docker. 
 
+https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
+
 ## 🌟 Main Features
 
 ### 1. **Real-Time Trading System** 📈
