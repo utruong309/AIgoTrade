@@ -209,8 +209,5 @@ docker exec -it aigotrade-backend-1 python manage.py shell
 - `DB_*`: Database connection parameters
 - `REDIS_URL`: Redis connection string
 - `NEWS_API_KEY`: NewsAPI service key (newsapi.org)
-<<<<<<< HEAD
 - `TWELVEDATA_API_KEY`: Market data API key
-=======
 - `TWELVEDATA_API_KEY`: Market data API key
->>>>>>> e121c20750a14e90819bcc3a823b6173dce81123
