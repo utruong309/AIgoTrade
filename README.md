@@ -71,39 +71,7 @@ https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
 - **Caching**: Redis for session management, task queuing, and prediction caching
 - **Web Server**: Nginx for frontend serving and API proxying
 - **Process Manager**: Gunicorn for Django application server
-- **Background Services**: Celery workers for market data updates and ML tasks
-- **WebSocket**: Django Channels for real-time prediction updates
-
-## AI-Powered Price Prediction Pipeline
-
-The application includes a comprehensive LSTM-based price prediction system:
-
-### **Features**
-- **Real-Time Predictions**: Live price predictions with confidence scores
-- **Model Training**: Automated LSTM model training on historical data
-- **Performance Tracking**: Model accuracy metrics and validation
-- **Caching**: Redis-based caching for high-performance delivery
-- **WebSocket Updates**: Real-time prediction updates via WebSocket
-
-### **Quick Start - Prediction Pipeline**
-```bash
-# Setup prediction pipeline
-python backend/setup_prediction_pipeline.py
-
-# Run comprehensive tests
-python backend/test_prediction_pipeline.py
-
-# Train a model for AAPL
-curl -X POST http://localhost:8000/api/ml-tasks/train_model/ \
-     -H "Content-Type: application/json" \
-     -d '{"symbol": "AAPL", "days": 90, "epochs": 10}'
-
-# Get prediction
-curl http://localhost:8000/api/predictions/predict/?symbol=AAPL
-```
-
-### **Documentation**
-For detailed information about the prediction pipeline, see [PREDICTION_PIPELINE_README.md](PREDICTION_PIPELINE_README.md).
+- **Background Services**: Celery workers for market data updates
 
 ## How to Run the Code
 
@@ -241,5 +209,8 @@ docker exec -it aigotrade-backend-1 python manage.py shell
 - `DB_*`: Database connection parameters
 - `REDIS_URL`: Redis connection string
 - `NEWS_API_KEY`: NewsAPI service key (newsapi.org)
+<<<<<<< HEAD
 - `TWELVEDATA_API_KEY`: Market data API key
+=======
 - `TWELVEDATA_API_KEY`: Market data API key
+>>>>>>> e121c20750a14e90819bcc3a823b6173dce81123
