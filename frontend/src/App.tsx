@@ -6,6 +6,7 @@ import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import PortfolioTable from './components/portfolio/PortfolioTable';
 import MarketPage from './components/market/MarketPage';
+import PredictionsPage from './pages/PredictionsPage';
 import { 
   AppBar, 
   Toolbar, 
@@ -16,7 +17,7 @@ import {
   Tab,
   Container
 } from '@mui/material';
-import { Dashboard, ShowChart, AccountCircle } from '@mui/icons-material';
+import { Dashboard, ShowChart, Psychology, AccountCircle } from '@mui/icons-material';
 
 const theme = createTheme({
   palette: {
@@ -68,6 +69,8 @@ const AppContent: React.FC = () => {
         return <PortfolioTable />;
       case 1:
         return <MarketPage />;
+      case 2:
+        return <PredictionsPage />;
       default:
         return <PortfolioTable />;
     }
@@ -115,6 +118,15 @@ const AppContent: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <ShowChart />
                     Market
+                  </Box>
+                }
+                iconPosition="start"
+              />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Psychology />
+                    Predictions
                   </Box>
                 }
                 iconPosition="start"

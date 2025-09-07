@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import news_views
 from . import views
+from . import ml_views
 
 router = DefaultRouter()
 
@@ -11,6 +12,10 @@ router.register(r'portfolios', views.PortfolioViewSet, basename='portfolio')
 router.register(r'holdings', views.HoldingViewSet, basename='holding')
 router.register(r'transactions', views.TransactionViewSet, basename='transaction')
 router.register(r'market', views.MarketDataViewSet, basename='market')
+router.register(r'predictions', views.PredictionViewSet, basename='prediction')
+router.register(r'prediction-models', views.PredictionModelViewSet, basename='prediction-model')
+router.register(r'data-preprocessing', views.DataPreprocessingViewSet, basename='data-preprocessing')
+router.register(r'ml-tasks', ml_views.MLTaskViewSet, basename='ml-task')
 
 urlpatterns = [
     path('', include(router.urls)),

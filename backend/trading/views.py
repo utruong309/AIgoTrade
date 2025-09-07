@@ -14,14 +14,21 @@ from django.utils.decorators import method_decorator
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.db import transaction
-from .models import Stock, Portfolio, Holding, Transaction, MarketData
+from .models import Stock, Portfolio, Holding, Transaction, MarketData, PredictionModel, PricePrediction
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserRegistrationSerializer,
     StockSerializer, PortfolioSerializer, PortfolioDetailSerializer,
-    HoldingSerializer, TransactionSerializer, TransactionCreateSerializer
+    HoldingSerializer, TransactionSerializer, TransactionCreateSerializer,
+    PredictionModelSerializer, PricePredictionSerializer, PredictionSummarySerializer
 )
 from .services import TradingService
 from .live_market_service import get_live_market_service
+from .prediction_service import PredictionService
+from .data_preprocessing import DataPreprocessingService
+from .ml_tasks import (
+    train_lstm_model, make_prediction_task, update_predictions_batch,
+    train_models_batch, cleanup_expired_caches, update_prediction_accuracy
+)
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.views import ObtainAuthToken
 
@@ -633,4 +640,339 @@ def register(request):
     return Response({
         'success': False,
         'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST) 
+    }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PredictionViewSet(viewsets.ModelViewSet):
+    """ViewSet for ML predictions"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return PricePrediction.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PredictionSummarySerializer
+        return PricePredictionSerializer
+    
+    @action(detail=False, methods=['get'])
+    def predict(self, request):
+        """Make a prediction for a specific stock"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            prediction_service = PredictionService()
+            result = prediction_service.make_prediction(symbol)
+            
+            if result['status'] == 'success':
+                return Response({
+                    'status': 'success',
+                    'data': result['data'],
+                    'cached': result['cached']
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': result['message']
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def history(self, request):
+        """Get prediction history for a stock"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            limit = int(request.query_params.get('limit', 10))
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            prediction_service = PredictionService()
+            history = prediction_service.get_prediction_history(symbol, limit)
+            
+            return Response({
+                'status': 'success',
+                'data': history,
+                'count': len(history)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def performance(self, request):
+        """Get model performance metrics"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            prediction_service = PredictionService()
+            performance = prediction_service.get_model_performance(symbol)
+            
+            return Response(performance)
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def available(self, request):
+        """Get all available predictions"""
+        try:
+            limit = int(request.query_params.get('limit', 20))
+            
+            prediction_service = PredictionService()
+            predictions = prediction_service.get_available_predictions(limit)
+            
+            return Response({
+                'status': 'success',
+                'data': predictions,
+                'count': len(predictions)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def update_actual_price(self, request):
+        """Update predictions with actual prices"""
+        try:
+            symbol = request.data.get('symbol', '').upper()
+            actual_price = request.data.get('actual_price')
+            
+            if not symbol or actual_price is None:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol and actual_price are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            prediction_service = PredictionService()
+            result = prediction_service.update_prediction_with_actual_price(symbol, float(actual_price))
+            
+            return Response(result)
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def invalidate_cache(self, request):
+        """Invalidate prediction cache for a symbol"""
+        try:
+            symbol = request.data.get('symbol', '').upper()
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            prediction_service = PredictionService()
+            success = prediction_service.invalidate_prediction_cache(symbol)
+            
+            return Response({
+                'status': 'success' if success else 'error',
+                'message': f'Cache invalidated for {symbol}' if success else 'Failed to invalidate cache'
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def cache_stats(self, request):
+        """Get cache statistics"""
+        try:
+            prediction_service = PredictionService()
+            stats = prediction_service.get_cache_stats()
+            
+            return Response({
+                'status': 'success',
+                'data': stats
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def cleanup_cache(self, request):
+        """Clean up expired cache entries"""
+        try:
+            prediction_service = PredictionService()
+            cleaned_count = prediction_service.cleanup_expired_cache()
+            
+            return Response({
+                'status': 'success',
+                'message': f'Cleaned up {cleaned_count} expired cache entries',
+                'cleaned_count': cleaned_count
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PredictionModelViewSet(viewsets.ModelViewSet):
+    """ViewSet for prediction models"""
+    queryset = PredictionModel.objects.all()
+    serializer_class = PredictionModelSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['stock', 'model_type', 'status']
+    search_fields = ['stock__symbol', 'stock__name']
+    ordering_fields = ['created_at', 'updated_at', 'last_prediction_at']
+    ordering = ['-created_at']
+    
+    @action(detail=False, methods=['get'])
+    def active_models(self, request):
+        """Get all active prediction models"""
+        try:
+            active_models = PredictionModel.objects.filter(
+                status='trained'
+            ).select_related('stock')
+            
+            serializer = self.get_serializer(active_models, many=True)
+            
+            return Response({
+                'status': 'success',
+                'data': serializer.data,
+                'count': len(serializer.data)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def by_symbol(self, request):
+        """Get prediction models for a specific symbol"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                stock = Stock.objects.get(symbol=symbol)
+                models = PredictionModel.objects.filter(stock=stock)
+                serializer = self.get_serializer(models, many=True)
+                
+                return Response({
+                    'status': 'success',
+                    'data': serializer.data,
+                    'count': len(serializer.data)
+                })
+                
+            except Stock.DoesNotExist:
+                return Response({
+                    'status': 'error',
+                    'message': f'Stock {symbol} not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DataPreprocessingViewSet(viewsets.ViewSet):
+    """ViewSet for data preprocessing operations"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['get'])
+    def data_summary(self, request):
+        """Get data summary for a stock"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            data_service = DataPreprocessingService()
+            summary = data_service.get_data_summary(symbol)
+            
+            return Response(summary)
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def prepare_training_data(self, request):
+        """Prepare training data for a stock"""
+        try:
+            symbol = request.query_params.get('symbol', '').upper()
+            days = int(request.query_params.get('days', 365))
+            include_indicators = request.query_params.get('include_indicators', 'true').lower() == 'true'
+            
+            if not symbol:
+                return Response({
+                    'status': 'error',
+                    'message': 'Symbol parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            data_service = DataPreprocessingService()
+            result = data_service.prepare_training_data(symbol, days, include_indicators)
+            
+            if result:
+                return Response({
+                    'status': 'success',
+                    'metadata': result['metadata']
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': f'Unable to prepare training data for {symbol}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

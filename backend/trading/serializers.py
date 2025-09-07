@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Stock, Portfolio, Holding, Transaction
+from .models import Stock, Portfolio, Holding, Transaction, PredictionModel, PricePrediction, PredictionCache
 
 User = get_user_model()
 
@@ -219,3 +219,87 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         )
         
         return user
+
+
+class PredictionModelSerializer(serializers.ModelSerializer):
+    stock_symbol = serializers.CharField(source='stock.symbol', read_only=True)
+    stock_name = serializers.CharField(source='stock.name', read_only=True)
+    is_active = serializers.ReadOnlyField()
+    training_duration_days = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = PredictionModel
+        fields = [
+            'id', 'stock', 'stock_symbol', 'stock_name', 'model_type', 'status',
+            'sequence_length', 'training_data_points', 'training_start_date',
+            'training_end_date', 'train_rmse', 'val_rmse', 'train_mae', 'val_mae',
+            'model_file_path', 'scaler_file_path', 'metadata_file_path',
+            'is_active', 'training_duration_days', 'created_at', 'updated_at',
+            'last_prediction_at'
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'last_prediction_at'
+        ]
+
+
+class PricePredictionSerializer(serializers.ModelSerializer):
+    stock_symbol = serializers.CharField(source='stock.symbol', read_only=True)
+    stock_name = serializers.CharField(source='stock.name', read_only=True)
+    model_type = serializers.CharField(source='prediction_model.model_type', read_only=True)
+    is_future_prediction = serializers.ReadOnlyField()
+    can_be_evaluated = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = PricePrediction
+        fields = [
+            'id', 'stock', 'stock_symbol', 'stock_name', 'prediction_model',
+            'model_type', 'prediction_type', 'predicted_price', 'current_price',
+            'price_change', 'price_change_percent', 'confidence_score',
+            'confidence_level', 'prediction_date', 'prediction_timestamp',
+            'actual_price', 'actual_price_change', 'actual_price_change_percent',
+            'prediction_accuracy', 'input_features', 'model_metadata',
+            'is_future_prediction', 'can_be_evaluated'
+        ]
+        read_only_fields = [
+            'id', 'prediction_timestamp', 'actual_price', 'actual_price_change',
+            'actual_price_change_percent', 'prediction_accuracy'
+        ]
+
+
+class PredictionCacheSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PredictionCache
+        fields = [
+            'id', 'stock_symbol', 'prediction_data', 'cache_key',
+            'expires_at', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class PredictionSummarySerializer(serializers.Serializer):
+    """Serializer for prediction summary data"""
+    symbol = serializers.CharField()
+    name = serializers.CharField()
+    current_price = serializers.DecimalField(max_digits=15, decimal_places=4)
+    predicted_price = serializers.DecimalField(max_digits=15, decimal_places=4)
+    price_change = serializers.DecimalField(max_digits=15, decimal_places=4)
+    price_change_percent = serializers.DecimalField(max_digits=8, decimal_places=4)
+    confidence_score = serializers.DecimalField(max_digits=5, decimal_places=4)
+    confidence_level = serializers.CharField()
+    prediction_date = serializers.DateField()
+    prediction_timestamp = serializers.DateTimeField()
+    model_type = serializers.CharField()
+    is_future_prediction = serializers.BooleanField()
+
+
+class ModelTrainingStatusSerializer(serializers.Serializer):
+    """Serializer for model training status"""
+    symbol = serializers.CharField()
+    status = serializers.CharField()
+    progress_percent = serializers.IntegerField()
+    current_epoch = serializers.IntegerField()
+    total_epochs = serializers.IntegerField()
+    train_loss = serializers.DecimalField(max_digits=10, decimal_places=6)
+    val_loss = serializers.DecimalField(max_digits=10, decimal_places=6)
+    estimated_completion = serializers.DateTimeField()
+    error_message = serializers.CharField(required=False)

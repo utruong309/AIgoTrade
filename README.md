@@ -33,7 +33,14 @@ https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
 - **Market Analysis Tools**: Stock screening, trending analysis, and sector performance
 - **News Integration**: Financial news aggregation via NewsAPI with Redis caching
 
-### 4. **User Experience**
+### 4. **AI-Powered Price Predictions** 
+- **LSTM Models**: PyTorch-based LSTM neural networks for price prediction
+- **Real-Time Predictions**: Live price predictions with confidence scores
+- **Model Training**: Automated model training on historical OHLCV data
+- **Performance Tracking**: Model accuracy metrics and prediction validation
+- **Caching**: Redis-based caching for high-performance prediction delivery
+
+### 5. **User Experience**
 - **Custom User Model**: Extended user profiles with investment preferences
 - **Responsive Design**: Modern Material-UI interface for all devices
 - **Real-Time Data**: Live market data updates via API polling (15-second intervals)
@@ -48,6 +55,8 @@ https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
 - **Task Queue**: Celery 5.3.4 with Redis 5.0.1 as broker
 - **Real-Time Data**: Live market data service with Twelvedata API integration
 - **API**: RESTful API with comprehensive filtering and search capabilities
+- **Machine Learning**: PyTorch 2.1.0 with LSTM models for price prediction
+- **Caching**: Redis for session management, task queuing, and prediction caching
 
 ### **Frontend**
 - **Framework**: React 19.1.1 with TypeScript 4.9.5
@@ -59,10 +68,42 @@ https://github.com/user-attachments/assets/d5547e6a-d95b-405a-b06f-d1f38485893a
 ### **Infrastructure**
 - **Containerization**: Docker with multi-service orchestration
 - **Database**: PostgreSQL with persistent volume storage
-- **Caching**: Redis for session management and task queuing
+- **Caching**: Redis for session management, task queuing, and prediction caching
 - **Web Server**: Nginx for frontend serving and API proxying
 - **Process Manager**: Gunicorn for Django application server
-- **Background Services**: Celery workers for market data updates
+- **Background Services**: Celery workers for market data updates and ML tasks
+- **WebSocket**: Django Channels for real-time prediction updates
+
+## AI-Powered Price Prediction Pipeline
+
+The application includes a comprehensive LSTM-based price prediction system:
+
+### **Features**
+- **Real-Time Predictions**: Live price predictions with confidence scores
+- **Model Training**: Automated LSTM model training on historical data
+- **Performance Tracking**: Model accuracy metrics and validation
+- **Caching**: Redis-based caching for high-performance delivery
+- **WebSocket Updates**: Real-time prediction updates via WebSocket
+
+### **Quick Start - Prediction Pipeline**
+```bash
+# Setup prediction pipeline
+python backend/setup_prediction_pipeline.py
+
+# Run comprehensive tests
+python backend/test_prediction_pipeline.py
+
+# Train a model for AAPL
+curl -X POST http://localhost:8000/api/ml-tasks/train_model/ \
+     -H "Content-Type: application/json" \
+     -d '{"symbol": "AAPL", "days": 90, "epochs": 10}'
+
+# Get prediction
+curl http://localhost:8000/api/predictions/predict/?symbol=AAPL
+```
+
+### **Documentation**
+For detailed information about the prediction pipeline, see [PREDICTION_PIPELINE_README.md](PREDICTION_PIPELINE_README.md).
 
 ## How to Run the Code
 
@@ -200,8 +241,5 @@ docker exec -it aigotrade-backend-1 python manage.py shell
 - `DB_*`: Database connection parameters
 - `REDIS_URL`: Redis connection string
 - `NEWS_API_KEY`: NewsAPI service key (newsapi.org)
-<<<<<<< HEAD
 - `TWELVEDATA_API_KEY`: Market data API key
-=======
 - `TWELVEDATA_API_KEY`: Market data API key
->>>>>>> e121c20750a14e90819bcc3a823b6173dce81123
