@@ -1,13 +1,11 @@
 import time
 import threading
 import logging
-from .websocket_service import TwelveDataWebSocketService
 
 logger = logging.getLogger(__name__)
 
 class BackgroundWebSocketClient:
     def __init__(self):
-        self.service = TwelveDataWebSocketService()
         self.running = False
         self.thread = None
         self.connection_thread = None

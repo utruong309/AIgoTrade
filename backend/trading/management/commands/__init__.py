@@ -11,7 +11,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Creating sample stocks and predictions...')
         
-        # Sample stocks data
         sample_stocks = [
             {
                 'symbol': 'AAPL',
@@ -105,7 +104,6 @@ class Command(BaseCommand):
             }
         ]
         
-        # Create stocks
         created_stocks = []
         for stock_data in sample_stocks:
             stock, created = Stock.objects.get_or_create(
@@ -118,7 +116,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'Stock already exists: {stock.symbol}')
             created_stocks.append(stock)
         
-        # Create prediction models
         for stock in created_stocks:
             model, created = PredictionModel.objects.get_or_create(
                 stock=stock,
@@ -143,21 +140,17 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f'Prediction model already exists for: {stock.symbol}')
         
-        # Create sample predictions
         for stock in created_stocks:
-            # Create multiple predictions for each stock
             for i in range(3):
                 prediction_time = timezone.now() - timezone.timedelta(hours=i*2)
-                
-                # Calculate predicted price (current price + some variation)
+
                 base_price = float(stock.current_price)
-                variation = (i - 1) * 0.02  # ±2% variation
+                variation = (i - 1) * 0.02  
                 predicted_price = Decimal(str(base_price * (1 + variation)))
                 
                 price_change = predicted_price - stock.current_price
                 price_change_percent = (price_change / stock.current_price) * 100
                 
-                # Determine confidence based on variation
                 if abs(variation) < 0.01:
                     confidence_score = Decimal('0.85')
                     confidence_level = 'high'

@@ -241,6 +241,7 @@ class NewsArticle(models.Model):
 
 
 class PredictionModel(models.Model):
+    """Model to store trained ML models metadata"""
     
     MODEL_TYPES = [
         ('lstm', 'LSTM Neural Network'),
@@ -261,20 +262,24 @@ class PredictionModel(models.Model):
     model_type = models.CharField(max_length=20, choices=MODEL_TYPES, default='lstm')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='training')
     
+    # Model metadata
     sequence_length = models.IntegerField(default=60)
     training_data_points = models.IntegerField()
     training_start_date = models.DateField()
     training_end_date = models.DateField()
-
+    
+    # Training metrics
     train_rmse = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     val_rmse = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     train_mae = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     val_mae = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     
+    # Model file paths
     model_file_path = models.CharField(max_length=500)
     scaler_file_path = models.CharField(max_length=500)
     metadata_file_path = models.CharField(max_length=500)
     
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_prediction_at = models.DateTimeField(null=True, blank=True)
@@ -289,14 +294,17 @@ class PredictionModel(models.Model):
     
     @property
     def is_active(self):
+        """Check if model is active and ready for predictions"""
         return self.status == 'trained' and self.model_file_path
     
     @property
     def training_duration_days(self):
+        """Calculate training data duration in days"""
         return (self.training_end_date - self.training_start_date).days
 
 
 class PricePrediction(models.Model):
+    """Model to store price predictions"""
     
     PREDICTION_TYPES = [
         ('next_day', 'Next Day'),
@@ -354,18 +362,22 @@ class PricePrediction(models.Model):
     
     @property
     def is_future_prediction(self):
+        """Check if this is a future prediction (not yet occurred)"""
         return self.prediction_date > timezone.now().date()
     
     @property
     def can_be_evaluated(self):
+        """Check if prediction can be evaluated (date has passed and actual price available)"""
         return (not self.is_future_prediction and 
                 self.actual_price is not None and 
                 self.prediction_accuracy is None)
     
     def calculate_accuracy(self):
+        """Calculate prediction accuracy if actual price is available"""
         if not self.can_be_evaluated:
             return None
         
+        # Calculate accuracy as percentage error
         error = abs(float(self.predicted_price - self.actual_price))
         accuracy = max(0, 100 - (error / float(self.actual_price) * 100))
         
@@ -375,6 +387,7 @@ class PricePrediction(models.Model):
         return accuracy
     
     def update_with_actual_price(self, actual_price):
+        """Update prediction with actual price and calculate accuracy"""
         self.actual_price = actual_price
         self.actual_price_change = actual_price - self.current_price
         self.actual_price_change_percent = (self.actual_price_change / self.current_price) * 100
@@ -384,12 +397,15 @@ class PricePrediction(models.Model):
 
 
 class PredictionCache(models.Model):
+    """Redis-like cache for frequently accessed predictions"""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     stock_symbol = models.CharField(max_length=10, db_index=True)
     
+    # Cached prediction data
     prediction_data = models.JSONField()
     
+    # Cache metadata
     cache_key = models.CharField(max_length=100, unique=True)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -407,6 +423,7 @@ class PredictionCache(models.Model):
     
     @classmethod
     def is_valid(cls, cache_key):
+        """Check if cache entry is still valid"""
         try:
             cache_entry = cls.objects.get(cache_key=cache_key)
             return cache_entry.expires_at > timezone.now()
@@ -415,6 +432,7 @@ class PredictionCache(models.Model):
     
     @classmethod
     def get_cached_prediction(cls, stock_symbol):
+        """Get cached prediction for a stock"""
         cache_key = f"prediction_{stock_symbol.lower()}"
         
         if cls.is_valid(cache_key):
@@ -428,11 +446,14 @@ class PredictionCache(models.Model):
     
     @classmethod
     def set_cached_prediction(cls, stock_symbol, prediction_data, expires_in_minutes=15):
+        """Cache prediction data"""
         cache_key = f"prediction_{stock_symbol.lower()}"
         expires_at = timezone.now() + timedelta(minutes=expires_in_minutes)
         
+        # Delete existing cache entry
         cls.objects.filter(cache_key=cache_key).delete()
         
+        # Create new cache entry
         cls.objects.create(
             stock_symbol=stock_symbol.upper(),
             prediction_data=prediction_data,
@@ -442,5 +463,6 @@ class PredictionCache(models.Model):
     
     @classmethod
     def cleanup_expired(cls):
+        """Clean up expired cache entries"""
         expired_count = cls.objects.filter(expires_at__lt=timezone.now()).delete()[0]
         return expired_count

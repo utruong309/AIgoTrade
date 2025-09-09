@@ -1,9 +1,3 @@
-"""
-Training script for LSTM stock price prediction models
-
-This script trains LSTM models for individual stocks using historical OHLCV data.
-"""
-
 import os
 import sys
 import django
@@ -12,7 +6,6 @@ import numpy as np
 from datetime import datetime, timedelta
 import logging
 
-# Setup Django environment
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aigo_trade.settings')
 django.setup()
@@ -20,7 +13,6 @@ django.setup()
 from trading.models import MarketData, Stock
 from trading.ml_models.lstm_model import StockPricePredictor
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -29,20 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_training_data(symbol: str, days: int = 365) -> pd.DataFrame:
-    """
-    Get historical OHLCV data for training
     
-    Args:
-        symbol: Stock symbol
-        days: Number of days of historical data
-        
-    Returns:
-        DataFrame with OHLCV data
-    """
     try:
         stock = Stock.objects.get(symbol=symbol.upper())
         
-        # Get historical data
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=days)
         
@@ -53,11 +35,10 @@ def get_training_data(symbol: str, days: int = 365) -> pd.DataFrame:
             time_period='1day'
         ).order_by('date')
         
-        if len(market_data) < 100:  # Need minimum data for training
+        if len(market_data) < 100:  
             logger.warning(f"Insufficient data for {symbol}: {len(market_data)} records")
             return None
         
-        # Convert to DataFrame
         data = []
         for record in market_data:
             data.append({
@@ -85,31 +66,18 @@ def get_training_data(symbol: str, days: int = 365) -> pd.DataFrame:
 
 
 def train_model_for_symbol(symbol: str, days: int = 365, epochs: int = 100) -> bool:
-    """
-    Train LSTM model for a specific symbol
     
-    Args:
-        symbol: Stock symbol
-        days: Days of historical data to use
-        epochs: Number of training epochs
-        
-    Returns:
-        bool: Success status
-    """
     try:
         logger.info(f"Starting training for {symbol}")
         
-        # Get training data
         df = get_training_data(symbol, days)
         if df is None or len(df) < 100:
             logger.error(f"Insufficient data for {symbol}")
             return False
         
-        # Initialize predictor
         model_path = f"models/{symbol.lower()}/"
         predictor = StockPricePredictor(model_path=model_path)
         
-        # Train model
         metrics = predictor.train_model(df, epochs=epochs)
         
         logger.info(f"Training completed for {symbol}")
@@ -123,16 +91,8 @@ def train_model_for_symbol(symbol: str, days: int = 365, epochs: int = 100) -> b
 
 
 def train_models_for_active_stocks(days: int = 365, epochs: int = 100, limit: int = 10):
-    """
-    Train models for all active stocks with sufficient data
     
-    Args:
-        days: Days of historical data to use
-        epochs: Number of training epochs
-        limit: Maximum number of stocks to train
-    """
     try:
-        # Get active stocks
         stocks = Stock.objects.filter(is_active=True)[:limit]
         
         successful_trains = 0
@@ -155,27 +115,15 @@ def train_models_for_active_stocks(days: int = 365, epochs: int = 100, limit: in
 
 
 def test_prediction(symbol: str) -> dict:
-    """
-    Test prediction for a specific symbol
-    
-    Args:
-        symbol: Stock symbol
-        
-    Returns:
-        dict: Prediction results
-    """
     try:
-        # Load model
         model_path = f"models/{symbol.lower()}/"
         predictor = StockPricePredictor(model_path=model_path)
         predictor.load_model(symbol)
-        
-        # Get recent data for prediction
-        df = get_training_data(symbol, days=90)  # Get last 90 days
+
+        df = get_training_data(symbol, days=90)  
         if df is None:
             return {'error': 'No data available'}
         
-        # Make prediction
         prediction = predictor.predict_next_price(df)
         
         logger.info(f"Prediction for {symbol}: {prediction}")
